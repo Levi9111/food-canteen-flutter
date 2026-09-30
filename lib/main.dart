@@ -2,32 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
-import 'core/theme/theme_provider.dart';
-import 'features/home/presentation/welcome_screen.dart';
+import 'features/ledger/presentation/rts_ledger_dashboard.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
     const ProviderScope(
-      child: FoodCanteenApp(),
+      child: RtsFoodCanteenApp(),
     ),
   );
 }
 
-class FoodCanteenApp extends ConsumerWidget {
-  const FoodCanteenApp({super.key});
+class RtsFoodCanteenApp extends StatelessWidget {
+  const RtsFoodCanteenApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider);
-
+  Widget build(BuildContext context) {
     return MaterialApp(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: themeMode,
-      home: const WelcomeScreen(),
+      home: const RtsLedgerDashboard(),
     );
   }
 }
