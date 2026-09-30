@@ -16,11 +16,17 @@ class MonthlyAuditView extends ConsumerWidget {
     final numberFormat = NumberFormat('#,##0.00', 'en_US');
     final dateFormat = DateFormat('dd MMMM yyyy, HH:mm');
 
+    final isMobile = MediaQuery.of(context).size.width < 768;
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Center(
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 8 : 24,
+        vertical: isMobile ? 12 : 24,
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 960),
+          constraints: BoxConstraints(minWidth: isMobile ? 650 : 850, maxWidth: 960),
           decoration: BoxDecoration(
             color: AppColors.ledgerSurface,
             border: Border.all(color: AppColors.bafNavy, width: 2),
@@ -44,7 +50,7 @@ class MonthlyAuditView extends ConsumerWidget {
                 ),
                 child: Row(
                   children: [
-                    const BafRtsCrest(size: 64),
+                    BafRtsCrest(size: 64),
                     const SizedBox(width: 20),
                     Expanded(
                       child: Column(
@@ -113,8 +119,11 @@ class MonthlyAuditView extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 color: AppColors.bafLightBlue,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  alignment: WrapAlignment.spaceBetween,
                   children: [
                     Text(
                       'ACCOUNTING PERIOD: ${audit.period.toUpperCase()}',

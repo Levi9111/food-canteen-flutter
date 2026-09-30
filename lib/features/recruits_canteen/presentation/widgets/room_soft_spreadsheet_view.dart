@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/baf_rts_crest.dart';
 import '../../constants/canteen_constants.dart';
+import '../../models/room_monthly_summary.dart';
 import '../../providers/canteen_register_provider.dart';
 
 class RoomSoftSpreadsheetView extends ConsumerWidget {
@@ -15,15 +16,17 @@ class RoomSoftSpreadsheetView extends ConsumerWidget {
     final state = ref.watch(canteenRegisterProvider);
     final notifier = ref.read(canteenRegisterProvider.notifier);
     final currencyFormat = NumberFormat('#,##0.00', 'en_US');
-    final dayNameFormat = DateFormat('EEEE');
     final dateDisplayFormat = DateFormat('dd MMM yyyy');
+    final dayNameFormat = DateFormat('EEEE');
+    final isMobile = MediaQuery.of(context).size.width < 768;
 
     final monthsList = [
       'January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December'
     ];
 
-    final summary = state.getRoomMonthlySummary(
+    // Compute formal room monthly summary model
+    final RoomMonthlySummary summary = state.getRoomMonthlySummary(
       state.activeEntry,
       state.selectedSquadron,
       state.selectedRoom,
@@ -36,7 +39,10 @@ class RoomSoftSpreadsheetView extends ConsumerWidget {
       children: [
         // Top Toolbar: Room, Squadron, Month Selectors & Print Button
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: EdgeInsets.symmetric(
+            horizontal: isMobile ? 10 : 16,
+            vertical: isMobile ? 8 : 10,
+          ),
           decoration: const BoxDecoration(
             color: AppColors.ledgerSurface,
             border: Border(bottom: BorderSide(color: AppColors.ledgerBorderLight)),
@@ -44,137 +50,193 @@ class RoomSoftSpreadsheetView extends ConsumerWidget {
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-            children: [
-              // Squadron Selector
-              const Text(
-                'SQN:',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
-              ),
-              const SizedBox(width: 6),
-              SizedBox(
-                width: 140,
-                child: DropdownButtonFormField<String>(
-                  isDense: true,
-                  isExpanded: true,
-                  initialValue: state.selectedSquadron,
-                  decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8)),
-                  items: CanteenConstants.squadrons.map((sqn) {
-                    return DropdownMenuItem(
-                      value: sqn,
-                      child: Text('$sqn Sqn', style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    if (val != null) notifier.setSelectedSquadron(val);
-                  },
+              children: [
+                // Squadron Selector
+                const Text(
+                  'SQN:',
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
                 ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // Room Selector
-              const Text(
-                'ROOM:',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
-              ),
-              const SizedBox(width: 6),
-              SizedBox(
-                width: 120,
-                child: DropdownButtonFormField<String>(
-                  isDense: true,
-                  isExpanded: true,
-                  initialValue: state.selectedRoom,
-                  decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8)),
-                  items: CanteenConstants.rooms.map((r) {
-                    return DropdownMenuItem(
-                      value: r,
-                      child: Text(r, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    if (val != null) notifier.setSelectedRoom(val);
-                  },
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.ledgerSurface,
+                    border: Border.all(color: AppColors.ledgerBorder),
+                  ),
+                  child: DropdownButton<String>(
+                    value: state.selectedSquadron,
+                    isDense: true,
+                    underline: const SizedBox(),
+                    items: CanteenConstants.squadrons.map((sqn) {
+                      return DropdownMenuItem(
+                        value: sqn,
+                        child: Text('$sqn Sqn', style: const TextStyle(fontSize: 12)),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) notifier.setSelectedSquadron(val);
+                    },
+                  ),
                 ),
-              ),
 
-              const SizedBox(width: 12),
+                const SizedBox(width: 10),
 
-              // Month & Year Selector
-              const Text(
-                'PERIOD:',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
-              ),
-              const SizedBox(width: 6),
-              SizedBox(
-                width: 130,
-                child: DropdownButtonFormField<int>(
-                  isDense: true,
-                  initialValue: state.selectedMonth,
-                  decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8)),
-                  items: List.generate(12, (i) => i + 1).map((m) {
-                    return DropdownMenuItem(
-                      value: m,
-                      child: Text(monthsList[m - 1], style: const TextStyle(fontSize: 12)),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    if (val != null) notifier.setSelectedMonth(state.selectedYear, val);
-                  },
+                // Room Selector
+                const Text(
+                  'ROOM:',
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
                 ),
-              ),
-              const SizedBox(width: 6),
-              SizedBox(
-                width: 85,
-                child: DropdownButtonFormField<int>(
-                  isDense: true,
-                  initialValue: state.selectedYear,
-                  decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8)),
-                  items: [2025, 2026, 2027].map((y) {
-                    return DropdownMenuItem(
-                      value: y,
-                      child: Text('$y', style: const TextStyle(fontSize: 12)),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    if (val != null) notifier.setSelectedMonth(val, state.selectedMonth);
-                  },
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.ledgerSurface,
+                    border: Border.all(color: AppColors.ledgerBorder),
+                  ),
+                  child: DropdownButton<String>(
+                    value: state.selectedRoom,
+                    isDense: true,
+                    underline: const SizedBox(),
+                    items: CanteenConstants.rooms.map((r) {
+                      return DropdownMenuItem(
+                        value: r,
+                        child: Text(r, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) notifier.setSelectedRoom(val);
+                    },
+                  ),
                 ),
-              ),
 
-              const SizedBox(width: 24),
+                const SizedBox(width: 10),
 
-              // Print / Soft Copy Button
-              ElevatedButton.icon(
-                icon: const Icon(Icons.print_outlined, size: 16),
-                label: const Text('PRINT SPREADSHEET'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.bafGold,
-                  foregroundColor: AppColors.bafNavy,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                // Month & Year Selector
+                const Text(
+                  'PERIOD:',
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
                 ),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Soft Spreadsheet for ${state.selectedRoom} (${state.selectedSquadron} Sqn) ready for printing.',
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.ledgerSurface,
+                    border: Border.all(color: AppColors.ledgerBorder),
+                  ),
+                  child: DropdownButton<int>(
+                    value: state.selectedMonth,
+                    isDense: true,
+                    underline: const SizedBox(),
+                    items: List.generate(12, (i) => i + 1).map((m) {
+                      return DropdownMenuItem(
+                        value: m,
+                        child: Text(monthsList[m - 1], style: const TextStyle(fontSize: 12)),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) notifier.setSelectedMonth(state.selectedYear, val);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.ledgerSurface,
+                    border: Border.all(color: AppColors.ledgerBorder),
+                  ),
+                  child: DropdownButton<int>(
+                    value: state.selectedYear,
+                    isDense: true,
+                    underline: const SizedBox(),
+                    items: [2025, 2026, 2027].map((y) {
+                      return DropdownMenuItem(
+                        value: y,
+                        child: Text('$y', style: const TextStyle(fontSize: 12)),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) notifier.setSelectedMonth(val, state.selectedMonth);
+                    },
+                  ),
+                ),
+
+                const SizedBox(width: 16),
+
+                // Print / Soft Copy Button
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.print_outlined, size: 15),
+                  label: const Text('PRINT SPREADSHEET'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.bafGold,
+                    foregroundColor: AppColors.bafNavy,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Soft Spreadsheet for ${state.selectedRoom} (${state.selectedSquadron} Sqn) ready for printing.',
+                        ),
+                        backgroundColor: AppColors.bafDeepBlue,
                       ),
-                      backgroundColor: AppColors.bafDeepBlue,
-                    ),
-                  );
-                },
-              ),
-            ],
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
-      ),
 
-        // The Formal Soft Spreadsheet Document (Scrollable & Printable Layout)
+        // Mobile Quick Summary Banner (Visible on mobile for immediate clarity)
+        if (isMobile)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            color: AppColors.bafLightBlue,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${state.selectedRoom.toUpperCase()} • ${state.selectedSquadron.toUpperCase()} SQN',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppColors.bafNavy),
+                      ),
+                      Text(
+                        '${summary.activeDaysCount} active days (Avg ৳ ${currencyFormat.format(summary.averageDailySpending)}/day)',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  color: AppColors.bafNavy,
+                  child: Text(
+                    '৳ ${currencyFormat.format(summary.totalMonthlySpending)}',
+                    style: const TextStyle(color: AppColors.bafGold, fontSize: 13, fontWeight: FontWeight.w900),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        // The Formal Soft Spreadsheet Document (Horizontally & Vertically Scrollable)
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            child: Center(
+            padding: EdgeInsets.symmetric(
+              horizontal: isMobile ? 8 : 20,
+              vertical: isMobile ? 8 : 16,
+            ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
               child: Container(
-                constraints: const BoxConstraints(maxWidth: 960),
+                constraints: BoxConstraints(minWidth: isMobile ? 720 : 850, maxWidth: 960),
                 decoration: BoxDecoration(
                   color: AppColors.ledgerSurface,
                   border: Border.all(color: AppColors.bafNavy, width: 2),
@@ -191,15 +253,15 @@ class RoomSoftSpreadsheetView extends ConsumerWidget {
                   children: [
                     // Document Official Masthead
                     Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(16),
                       decoration: const BoxDecoration(
                         color: AppColors.bafNavy,
                         border: Border(bottom: BorderSide(color: AppColors.bafGold, width: 2.5)),
                       ),
                       child: Row(
                         children: [
-                          const BafRtsCrest(size: 60),
-                          const SizedBox(width: 18),
+                          BafRtsCrest(size: 52),
+                          const SizedBox(width: 14),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,9 +270,9 @@ class RoomSoftSpreadsheetView extends ConsumerWidget {
                                   "PEOPLE'S REPUBLIC OF BANGLADESH • BANGLADESH AIR FORCE",
                                   style: TextStyle(
                                     color: AppColors.bafGold,
-                                    fontSize: 11,
+                                    fontSize: 10,
                                     fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.2,
+                                    letterSpacing: 1.0,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
@@ -219,85 +281,67 @@ class RoomSoftSpreadsheetView extends ConsumerWidget {
                                   style: AppTextStyles.titleLarge(Colors.white),
                                 ),
                                 const SizedBox(height: 2),
-                                const Text(
-                                  'FOOD CANTEEN — MONTHLY ROOM EXPENDITURE SPREADSHEET',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.8,
+                                Text(
+                                  'FOOD CANTEEN • MONTHLY ROOM EXPENDITURE SPREADSHEET (ENTRY ${state.activeEntry})',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.6,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: AppColors.bafDeepBlue,
-                              border: Border.all(color: AppColors.bafGold),
-                            ),
-                            child: Column(
-                              children: [
-                                const Text(
-                                  'RECRUIT BATCH',
-                                  style: TextStyle(color: AppColors.bafGold, fontSize: 9, fontWeight: FontWeight.bold),
-                                ),
-                                Text(
-                                  'ENTRY ${state.activeEntry}',
-                                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900),
-                                ),
-                              ],
-                            ),
-                          ),
                         ],
                       ),
                     ),
 
-                    // Specific Room & Period Information Box
+                    // Sheet Metadata Strip
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       color: AppColors.bafLightBlue,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           _buildMetaItem('SQUADRON', '${state.selectedSquadron.toUpperCase()} SQN'),
-                          _buildMetaItem('TARGET ROOM', state.selectedRoom.toUpperCase()),
-                          _buildMetaItem('MONTH & YEAR', '${monthsList[state.selectedMonth - 1].toUpperCase()} ${state.selectedYear}'),
-                          _buildMetaItem('DAYS CONSUMED', '${summary.activeDaysCount} of ${summary.days.length} Days'),
-                          _buildMetaItem('MANAGERS IN-CHARGE', 'NCOIC / JCOIC'),
+                          _buildMetaItem('ASSIGNED ROOM', state.selectedRoom.toUpperCase()),
+                          _buildMetaItem('ACCOUNTING MONTH', '${monthsList[state.selectedMonth - 1].toUpperCase()} ${state.selectedYear}'),
+                          _buildMetaItem('RECRUIT ENTRY BATCH', 'ENTRY ${state.activeEntry}'),
+                          _buildMetaItem('DAYS IN MONTH', '${summary.days.length} DAYS'),
                         ],
                       ),
                     ),
 
-                    // The 31 Days Itemized Table
+                    // Official Canteen Register Spreadsheet Table
                     Table(
                       border: TableBorder.all(color: AppColors.ledgerBorder, width: 1),
                       columnWidths: const {
-                        0: FlexColumnWidth(1.2),  // Day #
-                        1: FlexColumnWidth(2.0),  // Date
-                        2: FlexColumnWidth(2.0),  // Day of Week
-                        3: FlexColumnWidth(4.5),  // Items / Particulars
-                        4: FlexColumnWidth(2.4),  // Price (Tk)
-                        5: FlexColumnWidth(1.8),  // Logged By
-                        6: FlexColumnWidth(2.0),  // Rep Signature
+                        0: FixedColumnWidth(55),  // Day #
+                        1: FixedColumnWidth(110), // Date
+                        2: FixedColumnWidth(95),  // Day Name
+                        3: FlexColumnWidth(2.5),  // Items Picked
+                        4: FixedColumnWidth(110), // Price in Tk
+                        5: FixedColumnWidth(75),  // Logged By
+                        6: FixedColumnWidth(110), // Rep Sign
                       },
+                      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                       children: [
                         // Header Row
                         TableRow(
                           decoration: const BoxDecoration(color: AppColors.bafNavy),
                           children: [
                             _buildCell('DAY', isHeader: true, align: TextAlign.center),
-                            _buildCell('CALENDAR DATE', isHeader: true),
+                            _buildCell('DATE', isHeader: true),
                             _buildCell('WEEKDAY', isHeader: true),
-                            _buildCell('CANTEEN PARTICULARS / ITEMS PICKED', isHeader: true),
-                            _buildCell('PRICE VALUE (TK)', isHeader: true, align: TextAlign.right),
-                            _buildCell('LOGGED BY', isHeader: true, align: TextAlign.center),
-                            _buildCell('REP INITIAL', isHeader: true, align: TextAlign.center),
+                            _buildCell('ITEMS PICKED / PARTICULARS', isHeader: true),
+                            _buildCell('PRICE (TK)', isHeader: true, align: TextAlign.right),
+                            _buildCell('DUTY', isHeader: true, align: TextAlign.center),
+                            _buildCell('REP SIGN', isHeader: true, align: TextAlign.center),
                           ],
                         ),
 
-                        // Day Rows
+                        // Day Rows (All Days of Selected Month)
                         ...summary.days.map((record) {
                           final isEven = record.dayNumber % 2 == 0;
                           final hasSpending = record.amount > 0;
@@ -336,12 +380,12 @@ class RoomSoftSpreadsheetView extends ConsumerWidget {
                           );
                         }),
 
-                        // Month End Sum Total Row (Rule 6: at the end of the month the total price sum total will be shown)
+                        // Month End Sum Total Row
                         TableRow(
                           decoration: const BoxDecoration(color: AppColors.bafNavy),
                           children: [
                             _buildCell('', isHeader: true),
-                            _buildCell('MONTH SUM TOTAL', isHeader: true, isBold: true),
+                            _buildCell('MONTH TOTAL', isHeader: true, isBold: true),
                             _buildCell('', isHeader: true),
                             _buildCell(
                               'TOTAL BILLED TO ${state.selectedRoom.toUpperCase()} (${state.selectedSquadron.toUpperCase()} SQN)',
@@ -362,33 +406,35 @@ class RoomSoftSpreadsheetView extends ConsumerWidget {
                       ],
                     ),
 
-                    // Official Certification Box & Signatures
-                    Padding(
-                      padding: const EdgeInsets.all(20),
+                    // Spreadsheet Footer & Official Sign-off Certification Blocks
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      color: AppColors.ledgerSurface,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          // Certification Note
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              border: Border.all(color: AppColors.bafGold, width: 1.2),
-                              color: AppColors.bafLightBlue.withAlpha(40),
+                              color: AppColors.bafLightBlue.withAlpha(80),
+                              border: Border.all(color: AppColors.bafGold),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.verified_outlined, color: AppColors.bafNavy, size: 22),
-                                const SizedBox(width: 12),
+                                const Icon(Icons.verified, color: AppColors.bafDeepBlue, size: 20),
+                                const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
                                     'OFFICIAL RECONCILIATION CERTIFICATE: The above expenditures represent the daily documented canteen consumption of Entry ${state.activeEntry}, ${state.selectedSquadron} Squadron, ${state.selectedRoom} for ${monthsList[state.selectedMonth - 1]} ${state.selectedYear}. Grand Sum Total: Tk ${currencyFormat.format(summary.totalMonthlySpending)}.',
-                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, height: 1.4),
+                                    style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, height: 1.3),
                                   ),
                                 ),
                               ],
                             ),
                           ),
 
-                          const SizedBox(height: 36),
+                          const SizedBox(height: 28),
 
                           // Military Sign-off Blocks (Room Rep, NCOIC, JCOIC, OC)
                           Row(
@@ -401,7 +447,7 @@ class RoomSoftSpreadsheetView extends ConsumerWidget {
                             ],
                           ),
 
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
                         ],
                       ),
                     ),
@@ -421,12 +467,12 @@ class RoomSoftSpreadsheetView extends ConsumerWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 0.5),
+          style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 0.5),
         ),
         const SizedBox(height: 2),
         Text(
           value,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.bafNavy),
+          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: AppColors.bafNavy),
         ),
       ],
     );
@@ -441,12 +487,12 @@ class RoomSoftSpreadsheetView extends ConsumerWidget {
     Color? color,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
       child: Text(
         text,
         textAlign: align,
         style: TextStyle(
-          fontSize: isHeader ? 10.5 : 11,
+          fontSize: isHeader ? 10 : 10.5,
           fontWeight: (isHeader || isBold) ? FontWeight.bold : FontWeight.normal,
           color: isHeader
               ? (color ?? Colors.white)
@@ -458,18 +504,18 @@ class RoomSoftSpreadsheetView extends ConsumerWidget {
 
   static Widget _buildSignatureColumn(String role, String rank, String unit) {
     return Container(
-      width: 210,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      width: 170,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(border: Border.all(color: AppColors.ledgerBorderLight)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(role, style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: AppColors.bafNavy)),
-          const SizedBox(height: 28), // Physical Signature Line
+          Text(role, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.bafNavy)),
+          const SizedBox(height: 24),
           Container(height: 1, color: AppColors.ledgerBorder),
-          const SizedBox(height: 4),
-          Text(rank, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600)),
-          Text(unit, style: const TextStyle(fontSize: 9.5, color: AppColors.textMuted)),
+          const SizedBox(height: 3),
+          Text(rank, style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w600)),
+          Text(unit, style: const TextStyle(fontSize: 9, color: AppColors.textMuted)),
         ],
       ),
     );
