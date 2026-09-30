@@ -71,7 +71,7 @@ class MonthlyAuditView extends ConsumerWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'RECRUITS TRAINING SCHOOL (RTS), SHAMSHERNAGAR',
+                            'RECRUITS TRAINING SCHOOL (RTS)',
                             style: AppTextStyles.titleLarge(Colors.white),
                           ),
                           const SizedBox(height: 2),
@@ -303,7 +303,7 @@ class MonthlyAuditView extends ConsumerWidget {
                           designation: 'COUNTERSIGNED & APPROVED',
                           name: 'Officer Commanding (OC) Admin',
                           rank: 'Wing Commander (Wg Cdr)',
-                          unit: 'BAF Base Shamshernagar',
+                          unit: 'Recruits Training School (RTS)',
                         ),
                       ],
                     ),

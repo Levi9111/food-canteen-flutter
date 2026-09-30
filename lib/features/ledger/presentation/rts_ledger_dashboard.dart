@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/animations/smooth_transitions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../audit/presentation/monthly_audit_view.dart';
 import 'widgets/recruits_ledger_view.dart';
@@ -20,7 +21,11 @@ class _RtsLedgerDashboardState extends State<RtsLedgerDashboard>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      animationDuration: const Duration(milliseconds: 280),
+    );
   }
 
   @override
@@ -30,9 +35,9 @@ class _RtsLedgerDashboardState extends State<RtsLedgerDashboard>
   }
 
   void _openVoucherModal() {
-    showDialog(
+    showSmoothMilitaryDialog(
       context: context,
-      builder: (_) => const VoucherEntryModal(),
+      child: const VoucherEntryModal(),
     );
   }
 
@@ -119,7 +124,7 @@ class _RtsLedgerDashboardState extends State<RtsLedgerDashboard>
                   ),
                   SizedBox(width: 12),
                   Text(
-                    'OPERATOR: ACCOUNTS NCO • BAF BASE SHAMSHERNAGAR',
+                    'OPERATOR: ACCOUNTS NCO • RTS BAF',
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 10,

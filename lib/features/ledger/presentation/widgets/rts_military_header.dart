@@ -62,7 +62,7 @@ class RtsMilitaryHeader extends StatelessWidget {
                       ),
                       color: AppColors.bafDeepBlue,
                       child: const Text(
-                        'BAF BASE SHAMSHERNAGAR',
+                        'RECRUITS TRAINING SCHOOL (RTS)',
                         style: TextStyle(
                           color: AppColors.bafGold,
                           fontSize: 10,

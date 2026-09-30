@@ -426,7 +426,7 @@ class StaffLedgerNotifier extends Notifier<StaffLedgerState> {
         bdNo: 'BD/39104',
         rank: 'Master WO',
         name: 'Golam Sarwar',
-        office: 'Base HQ (Shamshernagar)',
+        office: 'Station HQ (RTS)',
         openingBalance: 150.0,
         totalDebits: 5800.0,
         totalCredits: 4500.0,
