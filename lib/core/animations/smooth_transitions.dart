@@ -73,6 +73,7 @@ class SmoothAnimatedMetricCard extends StatelessWidget {
   final String prefix;
   final Color textColor;
   final bool highlight;
+  final bool useExpanded;
 
   const SmoothAnimatedMetricCard({
     super.key,
@@ -81,49 +82,50 @@ class SmoothAnimatedMetricCard extends StatelessWidget {
     this.prefix = '৳ ',
     required this.textColor,
     this.highlight = false,
+    this.useExpanded = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppColors.ledgerSurface,
-          border: Border.all(
-            color: highlight ? textColor : AppColors.ledgerBorderLight,
-            width: highlight ? 1.5 : 1,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textMuted,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 2),
-            SmoothAnimatedCounter(
-              value: value,
-              prefix: prefix,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                color: textColor,
-              ),
-            ),
-          ],
+    final card = AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.ledgerSurface,
+        border: Border.all(
+          color: highlight ? textColor : AppColors.ledgerBorderLight,
+          width: highlight ? 1.5 : 1,
         ),
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textMuted,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 2),
+          SmoothAnimatedCounter(
+            value: value,
+            prefix: prefix,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: textColor,
+            ),
+          ),
+        ],
+      ),
     );
+
+    return useExpanded ? Expanded(child: card) : card;
   }
 }
 
