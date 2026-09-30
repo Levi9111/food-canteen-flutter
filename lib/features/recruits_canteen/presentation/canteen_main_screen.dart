@@ -115,6 +115,8 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
     final state = ref.watch(canteenRegisterProvider);
     final notifier = ref.read(canteenRegisterProvider.notifier);
 
+    final isMobile = MediaQuery.of(context).size.width < 768;
+
     return Scaffold(
       backgroundColor: AppColors.ledgerBackground,
       body: SafeArea(
@@ -122,151 +124,310 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
           children: [
             // Top Master Military Masthead
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 12 : 20,
+                vertical: isMobile ? 8 : 12,
+              ),
               decoration: const BoxDecoration(
                 color: AppColors.bafNavy,
                 border: Border(bottom: BorderSide(color: AppColors.bafGold, width: 2)),
               ),
-              child: Row(
-                children: [
-                  const BafRtsCrest(size: 48),
-                  const SizedBox(width: 14),
-
-                  // Titles
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              child: isMobile
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        // Mobile Header: Crest & Titles
                         Row(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              color: AppColors.bafRoundelGreen,
-                              child: const Text(
-                                'BANGLADESH AIR FORCE',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9.5,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.0,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              color: AppColors.bafDeepBlue,
-                              child: const Text(
-                                'RECRUITS TRAINING SCHOOL (RTS)',
-                                style: TextStyle(
-                                  color: AppColors.bafGold,
-                                  fontSize: 9.5,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.8,
-                                ),
+                            const BafRtsCrest(size: 36),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                        color: AppColors.bafRoundelGreen,
+                                        child: const Text(
+                                          'BAF',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 0.8,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                        color: AppColors.bafDeepBlue,
+                                        child: const Text(
+                                          'RTS CANTEEN',
+                                          style: TextStyle(
+                                            color: AppColors.bafGold,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w600,
+                                            letterSpacing: 0.6,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  const Text(
+                                    'FOOD CANTEEN, RTS',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 3),
-                        Text(
-                          'FOOD CANTEEN, RTS',
-                          style: AppTextStyles.titleLarge(Colors.white),
-                        ),
-                        const SizedBox(height: 1),
-                        const Text(
-                          'Recruits Room-Wise Daily Price Register & Monthly Spreadsheets',
-                          style: TextStyle(color: Colors.white70, fontSize: 11),
+                        const SizedBox(height: 8),
+
+                        // Mobile Controls: Entry Batch & Duty In-Charge
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              // Active Batch Selector
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppColors.bafDeepBlue,
+                                  border: Border.all(color: AppColors.bafGold.withAlpha(150)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text(
+                                      'ENTRY:',
+                                      style: TextStyle(
+                                        color: AppColors.bafGold,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    DropdownButton<String>(
+                                      value: state.activeEntry,
+                                      dropdownColor: AppColors.bafNavy,
+                                      underline: const SizedBox(),
+                                      isDense: true,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                      items: state.allEntries.map((e) {
+                                        return DropdownMenuItem(
+                                          value: e,
+                                          child: Text('Entry $e'),
+                                        );
+                                      }).toList(),
+                                      onChanged: (val) {
+                                        if (val != null) notifier.setActiveEntry(val);
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.add_circle, color: AppColors.bafGold, size: 16),
+                                      tooltip: 'New Batch',
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      onPressed: () => _showNewEntryDialog(context, ref),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const SizedBox(width: 8),
+
+                              // Duty In-Charge Selector
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppColors.bafDeepBlue,
+                                  border: Border.all(color: AppColors.bafGold.withAlpha(150)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text(
+                                      'DUTY:',
+                                      style: TextStyle(
+                                        color: AppColors.bafGold,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    _buildManagerChip(
+                                      title: CanteenConstants.roleNcoic,
+                                      isSelected: state.activeManager == CanteenConstants.roleNcoic,
+                                      onTap: () => notifier.setActiveManager(CanteenConstants.roleNcoic),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    _buildManagerChip(
+                                      title: CanteenConstants.roleJcoic,
+                                      isSelected: state.activeManager == CanteenConstants.roleJcoic,
+                                      onTap: () => notifier.setActiveManager(CanteenConstants.roleJcoic),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
-                    ),
-                  ),
-
-                  // Entry Selector & Creator
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.bafDeepBlue,
-                      border: Border.all(color: AppColors.bafGold.withAlpha(150)),
-                    ),
-                    child: Row(
+                    )
+                  : Row(
                       children: [
-                        const Text(
-                          'ACTIVE BATCH:',
-                          style: TextStyle(
-                            color: AppColors.bafGold,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                        const BafRtsCrest(size: 48),
+                        const SizedBox(width: 14),
+
+                        // Titles
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    color: AppColors.bafRoundelGreen,
+                                    child: const Text(
+                                      'BANGLADESH AIR FORCE',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 1.0,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    color: AppColors.bafDeepBlue,
+                                    child: const Text(
+                                      'RECRUITS TRAINING SCHOOL (RTS)',
+                                      style: TextStyle(
+                                        color: AppColors.bafGold,
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.8,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                'FOOD CANTEEN, RTS',
+                                style: AppTextStyles.titleLarge(Colors.white),
+                              ),
+                              const SizedBox(height: 1),
+                              const Text(
+                                'Recruits Room-Wise Daily Price Register & Monthly Spreadsheets',
+                                style: TextStyle(color: Colors.white70, fontSize: 11),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        DropdownButton<String>(
-                          value: state.activeEntry,
-                          dropdownColor: AppColors.bafNavy,
-                          underline: const SizedBox(),
-                          isDense: true,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900,
+
+                        // Entry Selector & Creator
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.bafDeepBlue,
+                            border: Border.all(color: AppColors.bafGold.withAlpha(150)),
                           ),
-                          items: state.allEntries.map((e) {
-                            return DropdownMenuItem(
-                              value: e,
-                              child: Text('Entry $e'),
-                            );
-                          }).toList(),
-                          onChanged: (val) {
-                            if (val != null) notifier.setActiveEntry(val);
-                          },
+                          child: Row(
+                            children: [
+                              const Text(
+                                'ACTIVE BATCH:',
+                                style: TextStyle(
+                                  color: AppColors.bafGold,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              DropdownButton<String>(
+                                value: state.activeEntry,
+                                dropdownColor: AppColors.bafNavy,
+                                underline: const SizedBox(),
+                                isDense: true,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                                items: state.allEntries.map((e) {
+                                  return DropdownMenuItem(
+                                    value: e,
+                                    child: Text('Entry $e'),
+                                  );
+                                }).toList(),
+                                onChanged: (val) {
+                                  if (val != null) notifier.setActiveEntry(val);
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.add_circle, color: AppColors.bafGold, size: 18),
+                                tooltip: 'Add New Entry Batch',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onPressed: () => _showNewEntryDialog(context, ref),
+                              ),
+                            ],
+                          ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.add_circle, color: AppColors.bafGold, size: 18),
-                          tooltip: 'Add New Entry Batch',
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          onPressed: () => _showNewEntryDialog(context, ref),
+
+                        const SizedBox(width: 14),
+
+                        // Manager Switcher (NCOIC / JCOIC)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.bafDeepBlue,
+                            border: Border.all(color: AppColors.bafGold.withAlpha(150)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Text(
+                                'DUTY IN-CHARGE:',
+                                style: TextStyle(
+                                  color: AppColors.bafGold,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              _buildManagerChip(
+                                title: CanteenConstants.roleNcoic,
+                                isSelected: state.activeManager == CanteenConstants.roleNcoic,
+                                onTap: () => notifier.setActiveManager(CanteenConstants.roleNcoic),
+                              ),
+                              const SizedBox(width: 4),
+                              _buildManagerChip(
+                                title: CanteenConstants.roleJcoic,
+                                isSelected: state.activeManager == CanteenConstants.roleJcoic,
+                                onTap: () => notifier.setActiveManager(CanteenConstants.roleJcoic),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                  ),
-
-                  const SizedBox(width: 14),
-
-                  // Manager Switcher (NCOIC / JCOIC)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.bafDeepBlue,
-                      border: Border.all(color: AppColors.bafGold.withAlpha(150)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Text(
-                          'DUTY IN-CHARGE:',
-                          style: TextStyle(
-                            color: AppColors.bafGold,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildManagerChip(
-                          title: CanteenConstants.roleNcoic,
-                          isSelected: state.activeManager == CanteenConstants.roleNcoic,
-                          onTap: () => notifier.setActiveManager(CanteenConstants.roleNcoic),
-                        ),
-                        const SizedBox(width: 4),
-                        _buildManagerChip(
-                          title: CanteenConstants.roleJcoic,
-                          isSelected: state.activeManager == CanteenConstants.roleJcoic,
-                          onTap: () => notifier.setActiveManager(CanteenConstants.roleJcoic),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
             ),
 
             // Sharp Military Tab Navigation (Strict Zero Curves)
@@ -277,30 +438,30 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
               ),
               child: TabBar(
                 controller: _tabController,
+                isScrollable: !isMobile,
                 indicatorColor: AppColors.bafGold,
                 indicatorWeight: 3.5,
                 indicatorSize: TabBarIndicatorSize.tab,
                 labelColor: AppColors.bafGold,
                 unselectedLabelColor: Colors.white70,
-                labelStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, letterSpacing: 0.6),
-                tabs: const [
-                  Tab(
-                    icon: Icon(Icons.menu_book, size: 16),
-                    text: '1. DAILY REGISTER (ROOM BOOK)',
-                  ),
-                  Tab(
-                    icon: Icon(Icons.grid_on, size: 16),
-                    text: '2. MONTHLY MATRIX (ALL ROOMS)',
-                  ),
-                  Tab(
-                    icon: Icon(Icons.table_chart, size: 16),
-                    text: '3. ROOM SOFT SPREADSHEET (PRINTABLE)',
-                  ),
-                  Tab(
-                    icon: Icon(Icons.verified, size: 16),
-                    text: '4. AUDIT & RECONCILIATION SHEET',
-                  ),
-                ],
+                labelStyle: TextStyle(
+                  fontSize: isMobile ? 9.5 : 11.5,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: isMobile ? 0.2 : 0.6,
+                ),
+                tabs: isMobile
+                    ? const [
+                        Tab(icon: Icon(Icons.menu_book, size: 16), text: 'REGISTER'),
+                        Tab(icon: Icon(Icons.grid_on, size: 16), text: 'MATRIX'),
+                        Tab(icon: Icon(Icons.table_chart, size: 16), text: 'SPREADSHEET'),
+                        Tab(icon: Icon(Icons.verified, size: 16), text: 'AUDIT'),
+                      ]
+                    : const [
+                        Tab(icon: Icon(Icons.menu_book, size: 16), text: '1. DAILY REGISTER (ROOM BOOK)'),
+                        Tab(icon: Icon(Icons.grid_on, size: 16), text: '2. MONTHLY MATRIX (ALL ROOMS)'),
+                        Tab(icon: Icon(Icons.table_chart, size: 16), text: '3. ROOM SOFT SPREADSHEET (PRINTABLE)'),
+                        Tab(icon: Icon(Icons.verified, size: 16), text: '4. AUDIT & RECONCILIATION SHEET'),
+                      ],
               ),
             ),
 
@@ -319,28 +480,30 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
 
             // Bottom Military Status Ribbon
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               color: AppColors.bafNavy,
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'SECURITY: OFFICIAL USE ONLY • RECRUITS TRAINING SCHOOL (RTS) • BANGLADESH AIR FORCE',
+                      isMobile
+                          ? 'RTS BAF • OFFICIAL CANTEEN REGISTER'
+                          : 'SECURITY: OFFICIAL USE ONLY • RECRUITS TRAINING SCHOOL (RTS) • BANGLADESH AIR FORCE',
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: AppColors.bafGold,
-                        fontSize: 10,
+                        fontSize: 9.5,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 0.8,
+                        letterSpacing: 0.6,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Text(
-                    'ACTIVE ENTRY ${state.activeEntry} • LOGGED AS ${state.activeManager}',
+                    'ENTRY ${state.activeEntry} • ${state.activeManager}',
                     style: const TextStyle(
                       color: Colors.white70,
-                      fontSize: 10,
+                      fontSize: 9.5,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
