@@ -1,6 +1,9 @@
 class AppConstants {
-  static const String appName = 'RTS Food Canteen';
-  static const String appTagline = 'Fresh & Quick Meals at Your Fingertips';
+  static const String appName = 'Food Canteen, RTS';
+  static const String institutionName = 'Recruits Training School';
+  static const String organizationName = 'Bangladesh Air Force';
+  static const String appSubtitle = 'Mess & Canteen Accounts Management System';
+  static const String baseLocation = 'BAF Base Shamshernagar';
 
   // API Config
   static const String defaultBaseUrl = 'http://localhost:5000/api/v1';

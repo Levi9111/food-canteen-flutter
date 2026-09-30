@@ -7,155 +7,113 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      primaryColor: AppColors.primary,
-      scaffoldBackgroundColor: AppColors.lightBackground,
+      primaryColor: AppColors.bafDeepBlue,
+      scaffoldBackgroundColor: AppColors.ledgerBackground,
       colorScheme: const ColorScheme.light(
-        primary: AppColors.primary,
-        secondary: AppColors.secondary,
-        surface: AppColors.lightSurface,
-        error: AppColors.error,
-        onPrimary: Colors.white,
-        onSecondary: Colors.black87,
-        onSurface: AppColors.lightTextPrimary,
+        primary: AppColors.bafDeepBlue,
+        secondary: AppColors.bafGold,
+        surface: AppColors.ledgerSurface,
+        error: AppColors.debitRed,
+        onPrimary: AppColors.textOnDark,
+        onSecondary: AppColors.bafNavy,
+        onSurface: AppColors.textPrimary,
         onError: Colors.white,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.lightSurface,
-        foregroundColor: AppColors.lightTextPrimary,
+        backgroundColor: AppColors.bafNavy,
+        foregroundColor: AppColors.textOnDark,
         elevation: 0,
         centerTitle: false,
         surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       ),
+      // Sharp rectangular cards without rounded edges
       cardTheme: CardThemeData(
-        color: AppColors.lightCard,
+        color: AppColors.ledgerSurface,
         elevation: 0,
+        margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.lightBorder, width: 1),
+          borderRadius: BorderRadius.zero,
+          side: const BorderSide(color: AppColors.ledgerBorderLight, width: 1),
         ),
       ),
+      // Sharp, precise input fields for accounting entry
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.lightSurface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        fillColor: AppColors.ledgerSurface,
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.lightBorder),
+          borderRadius: BorderRadius.zero,
+          borderSide: const BorderSide(color: AppColors.ledgerBorder, width: 1),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.lightBorder),
+          borderRadius: BorderRadius.zero,
+          borderSide: const BorderSide(color: AppColors.ledgerBorder, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderRadius: BorderRadius.zero,
+          borderSide: const BorderSide(color: AppColors.bafDeepBlue, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.error),
+          borderRadius: BorderRadius.zero,
+          borderSide: const BorderSide(color: AppColors.debitRed, width: 1),
         ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.zero,
+          borderSide: const BorderSide(color: AppColors.debitRed, width: 2),
+        ),
+        labelStyle: AppTextStyles.bodyMedium(AppColors.textSecondary),
+        hintStyle: AppTextStyles.bodyMedium(AppColors.textMuted),
       ),
+      // Sharp, crisp enterprise buttons
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.bafDeepBlue,
           foregroundColor: Colors.white,
-          minimumSize: const Size.fromHeight(50),
           elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.zero,
           ),
           textStyle: AppTextStyles.titleMedium(Colors.white),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          minimumSize: const Size.fromHeight(50),
-          side: const BorderSide(color: AppColors.primary),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+          foregroundColor: AppColors.bafDeepBlue,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          side: const BorderSide(color: AppColors.bafDeepBlue, width: 1.5),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.zero,
           ),
-          textStyle: AppTextStyles.titleMedium(AppColors.primary),
+          textStyle: AppTextStyles.titleMedium(AppColors.bafDeepBlue),
         ),
+      ),
+      // Sharp tabular data styling
+      dividerTheme: const DividerThemeData(
+        color: AppColors.ledgerBorderLight,
+        thickness: 1,
+        space: 1,
+      ),
+      dataTableTheme: DataTableThemeData(
+        headingRowColor: WidgetStateProperty.all(AppColors.bafNavy),
+        headingTextStyle: AppTextStyles.labelSmall(Colors.white),
+        dataRowColor: WidgetStateProperty.resolveWith<Color?>((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.bafLightBlue;
+          }
+          return null;
+        }),
+        dataTextStyle: AppTextStyles.bodyMedium(AppColors.textPrimary),
+        horizontalMargin: 12,
+        columnSpacing: 16,
       ),
     );
   }
 
   static ThemeData get darkTheme {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      primaryColor: AppColors.primary,
-      scaffoldBackgroundColor: AppColors.darkBackground,
-      colorScheme: const ColorScheme.dark(
-        primary: AppColors.primary,
-        secondary: AppColors.secondary,
-        surface: AppColors.darkSurface,
-        error: AppColors.error,
-        onPrimary: Colors.white,
-        onSecondary: Colors.black87,
-        onSurface: AppColors.darkTextPrimary,
-        onError: Colors.white,
-      ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.darkSurface,
-        foregroundColor: AppColors.darkTextPrimary,
-        elevation: 0,
-        centerTitle: false,
-        surfaceTintColor: Colors.transparent,
-      ),
-      cardTheme: CardThemeData(
-        color: AppColors.darkCard,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.darkBorder, width: 1),
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: AppColors.darkSurface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.darkBorder),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.darkBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.error),
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          minimumSize: const Size.fromHeight(50),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          textStyle: AppTextStyles.titleMedium(Colors.white),
-        ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primaryLight,
-          minimumSize: const Size.fromHeight(50),
-          side: const BorderSide(color: AppColors.primaryLight),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          textStyle: AppTextStyles.titleMedium(AppColors.primaryLight),
-        ),
-      ),
-    );
+    return lightTheme; // For official military accounts, consistent sharp high-contrast light theme is primary
   }
 }
