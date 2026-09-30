@@ -424,7 +424,9 @@ class _VoucherEntryModalState extends ConsumerState<VoucherEntryModal> {
   }) {
     return InkWell(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected ? color : AppColors.ledgerSurface,

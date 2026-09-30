@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/animations/smooth_transitions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../models/staff_account.dart';
@@ -83,27 +84,28 @@ class StaffLedgerView extends ConsumerWidget {
           color: AppColors.bafLightBlue,
           child: Row(
             children: [
-              _buildMetricCard(
+              SmoothAnimatedMetricCard(
                 title: 'STAFF PERSONNEL',
-                value: '${state.filteredStaff.length}',
+                value: state.filteredStaff.length.toDouble(),
+                prefix: '',
                 textColor: AppColors.bafNavy,
               ),
               const SizedBox(width: 12),
-              _buildMetricCard(
+              SmoothAnimatedMetricCard(
                 title: 'TOTAL CANTEEN CHARGES',
-                value: '৳ ${numberFormat.format(state.totalDebits)}',
+                value: state.totalDebits,
                 textColor: AppColors.debitRed,
               ),
               const SizedBox(width: 12),
-              _buildMetricCard(
+              SmoothAnimatedMetricCard(
                 title: 'RECOVERIES / PAY DEDUCTIONS',
-                value: '৳ ${numberFormat.format(state.totalCredits)}',
+                value: state.totalCredits,
                 textColor: AppColors.creditGreen,
               ),
               const SizedBox(width: 12),
-              _buildMetricCard(
+              SmoothAnimatedMetricCard(
                 title: 'OUTSTANDING ARREARS',
-                value: '৳ ${numberFormat.format(state.totalOutstandingDues)}',
+                value: state.totalOutstandingDues,
                 textColor: state.totalOutstandingDues > 0
                     ? AppColors.debitRed
                     : AppColors.cleared,
@@ -231,9 +233,9 @@ class StaffLedgerView extends ConsumerWidget {
                                       tooltip: 'Post Voucher',
                                       color: AppColors.bafDeepBlue,
                                       onPressed: () {
-                                        showDialog(
+                                        showSmoothMilitaryDialog(
                                           context: context,
-                                          builder: (_) => VoucherEntryModal(preselectedStaffId: staff.id),
+                                          child: VoucherEntryModal(preselectedStaffId: staff.id),
                                         );
                                       },
                                     ),
@@ -335,13 +337,12 @@ class StaffLedgerView extends ConsumerWidget {
     final numberFormat = NumberFormat('#,##0.00', 'en_US');
     final dateFormat = DateFormat('dd MMM yyyy');
 
-    showDialog(
+    showSmoothMilitaryDialog(
       context: context,
-      builder: (ctx) {
-        return Dialog(
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-          child: Container(
-            width: 750,
+      child: Dialog(
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+        child: Container(
+          width: 750,
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: AppColors.ledgerSurface,
@@ -369,7 +370,7 @@ class StaffLedgerView extends ConsumerWidget {
                     ),
                     IconButton(
                       icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(ctx).pop(),
+                      onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
                 ),
@@ -480,8 +481,7 @@ class StaffLedgerView extends ConsumerWidget {
               ],
             ),
           ),
-        );
-      },
-    );
+        ),
+      );
   }
 }
