@@ -698,20 +698,23 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                       const SizedBox(height: 16),
 
                       // Actions
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
+                      Wrap(
+                        alignment: WrapAlignment.end,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
                           OutlinedButton(
                             onPressed: () => Navigator.of(context).pop(),
                             child: const Text('CANCEL'),
                           ),
-                          const SizedBox(width: 10),
                           ElevatedButton.icon(
                             icon: const Icon(Icons.check, size: 16),
                             label: const Text('SAVE PRICE IN BOOK'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.bafNavy,
                               foregroundColor: AppColors.bafGold,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                             ),
                             onPressed: () async {
                               final amt = double.tryParse(amountController.text.trim()) ?? 0.0;
