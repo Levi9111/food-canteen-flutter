@@ -15,6 +15,9 @@ class CanteenRegisterState {
   final int selectedYear;
   final int selectedMonth;
   final Map<String, DailyRoomExpense> expenses; // Key: entry|squadron|room|yyyy-MM-dd
+  final Map<String, double> roomPreDues;        // Key: entry|squadron|room
+  final Map<String, double> roomPaid;           // Key: entry|squadron|room
+  final Map<String, String> roomRanks;          // Key: entry|squadron|room
   final bool isLoading;
 
   const CanteenRegisterState({
@@ -27,6 +30,9 @@ class CanteenRegisterState {
     required this.selectedYear,
     required this.selectedMonth,
     this.expenses = const {},
+    this.roomPreDues = const {},
+    this.roomPaid = const {},
+    this.roomRanks = const {},
     this.isLoading = false,
   });
 
@@ -35,8 +41,24 @@ class CanteenRegisterState {
     return '$entry|$squadron|$room|$dStr';
   }
 
+  String makeRoomKey(String entry, String squadron, String room) {
+    return '$entry|$squadron|$room';
+  }
+
   DailyRoomExpense? getExpense(String entry, String squadron, String room, DateTime date) {
     return expenses[makeKey(entry, squadron, room, date)];
+  }
+
+  double getRoomPreDue(String entry, String squadron, String room) {
+    return roomPreDues[makeRoomKey(entry, squadron, room)] ?? 0.0;
+  }
+
+  double getRoomPaid(String entry, String squadron, String room) {
+    return roomPaid[makeRoomKey(entry, squadron, room)] ?? 0.0;
+  }
+
+  String getRoomRank(String entry, String squadron, String room) {
+    return roomRanks[makeRoomKey(entry, squadron, room)] ?? 'Rect Rep';
   }
 
   /// Calculates total price for a squadron on a single day
@@ -68,6 +90,34 @@ class CanteenRegisterState {
       total += getRoomMonthTotal(entry, squadron, room, year, month);
     }
     return total;
+  }
+
+  /// Sum of all Previous Dues in a Squadron
+  double getSquadronPreDueTotal(String entry, String squadron) {
+    double total = 0.0;
+    for (final room in CanteenConstants.rooms) {
+      total += getRoomPreDue(entry, squadron, room);
+    }
+    return total;
+  }
+
+  /// Sum of all Payments in a Squadron
+  double getSquadronPaidTotal(String entry, String squadron) {
+    double total = 0.0;
+    for (final room in CanteenConstants.rooms) {
+      total += getRoomPaid(entry, squadron, room);
+    }
+    return total;
+  }
+
+  /// Grand Total = Sum of PreDue + Month Spending
+  double getSquadronGrandTotal(String entry, String squadron, int year, int month) {
+    return getSquadronPreDueTotal(entry, squadron) + getSquadronMonthTotal(entry, squadron, year, month);
+  }
+
+  /// Net Closing Due = Grand Total - Paid
+  double getSquadronNetDueTotal(String entry, String squadron, int year, int month) {
+    return getSquadronGrandTotal(entry, squadron, year, month) - getSquadronPaidTotal(entry, squadron);
   }
 
   /// Generates the complete soft spreadsheet data structure for a room
@@ -103,6 +153,9 @@ class CanteenRegisterState {
       room: room,
       year: year,
       month: month,
+      rank: getRoomRank(entry, squadron, room),
+      preDue: getRoomPreDue(entry, squadron, room),
+      paid: getRoomPaid(entry, squadron, room),
       days: days,
     );
   }
@@ -117,6 +170,9 @@ class CanteenRegisterState {
     int? selectedYear,
     int? selectedMonth,
     Map<String, DailyRoomExpense>? expenses,
+    Map<String, double>? roomPreDues,
+    Map<String, double>? roomPaid,
+    Map<String, String>? roomRanks,
     bool? isLoading,
   }) {
     return CanteenRegisterState(
@@ -129,6 +185,9 @@ class CanteenRegisterState {
       selectedYear: selectedYear ?? this.selectedYear,
       selectedMonth: selectedMonth ?? this.selectedMonth,
       expenses: expenses ?? this.expenses,
+      roomPreDues: roomPreDues ?? this.roomPreDues,
+      roomPaid: roomPaid ?? this.roomPaid,
+      roomRanks: roomRanks ?? this.roomRanks,
       isLoading: isLoading ?? this.isLoading,
     );
   }
@@ -147,6 +206,9 @@ class CanteenRegisterNotifier extends Notifier<CanteenRegisterState> {
       selectedDate: now,
       selectedYear: now.year,
       selectedMonth: now.month,
+      roomPreDues: _generateInitialPreDues(),
+      roomPaid: _generateInitialPaid(),
+      roomRanks: _generateInitialRanks(),
     );
     Future.microtask(() => _loadFromPrefs());
     return initialState;
@@ -159,6 +221,9 @@ class CanteenRegisterNotifier extends Notifier<CanteenRegisterState> {
       final activeEntry = prefs.getString(CanteenConstants.prefsKeyActiveEntry) ?? CanteenConstants.defaultEntry;
       final activeManager = prefs.getString(CanteenConstants.prefsKeyActiveManager) ?? CanteenConstants.roleNcoic;
       final rawExpenses = prefs.getString(CanteenConstants.prefsKeyExpenses);
+      final rawDues = prefs.getString(CanteenConstants.prefsKeyRoomDues);
+      final rawPaid = prefs.getString(CanteenConstants.prefsKeyRoomPaid);
+      final rawRanks = prefs.getString(CanteenConstants.prefsKeyRoomRanks);
 
       Map<String, DailyRoomExpense> loadedExpenses = {};
       if (rawExpenses != null && rawExpenses.isNotEmpty) {
@@ -167,8 +232,31 @@ class CanteenRegisterNotifier extends Notifier<CanteenRegisterState> {
           loadedExpenses[key] = DailyRoomExpense.fromJson(val as Map<String, dynamic>);
         });
       } else {
-        // Pre-populate realistic demonstration records for Entry 54
         loadedExpenses = _generateDemoRecords();
+      }
+
+      Map<String, double> loadedDues = Map.from(state.roomPreDues);
+      if (rawDues != null && rawDues.isNotEmpty) {
+        final decoded = jsonDecode(rawDues) as Map<String, dynamic>;
+        decoded.forEach((key, val) {
+          loadedDues[key] = (val as num).toDouble();
+        });
+      }
+
+      Map<String, double> loadedPaid = Map.from(state.roomPaid);
+      if (rawPaid != null && rawPaid.isNotEmpty) {
+        final decoded = jsonDecode(rawPaid) as Map<String, dynamic>;
+        decoded.forEach((key, val) {
+          loadedPaid[key] = (val as num).toDouble();
+        });
+      }
+
+      Map<String, String> loadedRanks = Map.from(state.roomRanks);
+      if (rawRanks != null && rawRanks.isNotEmpty) {
+        final decoded = jsonDecode(rawRanks) as Map<String, dynamic>;
+        decoded.forEach((key, val) {
+          loadedRanks[key] = val.toString();
+        });
       }
 
       state = state.copyWith(
@@ -176,9 +264,11 @@ class CanteenRegisterNotifier extends Notifier<CanteenRegisterState> {
         allEntries: entriesJson ?? state.allEntries,
         activeManager: activeManager,
         expenses: loadedExpenses,
+        roomPreDues: loadedDues,
+        roomPaid: loadedPaid,
+        roomRanks: loadedRanks,
       );
     } catch (_) {
-      // Fallback to demo records on error
       state = state.copyWith(expenses: _generateDemoRecords());
     }
   }
@@ -190,9 +280,13 @@ class CanteenRegisterNotifier extends Notifier<CanteenRegisterState> {
       await prefs.setString(CanteenConstants.prefsKeyActiveEntry, state.activeEntry);
       await prefs.setString(CanteenConstants.prefsKeyActiveManager, state.activeManager);
 
-      final Map<String, dynamic> serializable = {};
-      state.expenses.forEach((k, v) => serializable[k] = v.toJson());
-      await prefs.setString(CanteenConstants.prefsKeyExpenses, jsonEncode(serializable));
+      final Map<String, dynamic> serializableExp = {};
+      state.expenses.forEach((k, v) => serializableExp[k] = v.toJson());
+      await prefs.setString(CanteenConstants.prefsKeyExpenses, jsonEncode(serializableExp));
+
+      await prefs.setString(CanteenConstants.prefsKeyRoomDues, jsonEncode(state.roomPreDues));
+      await prefs.setString(CanteenConstants.prefsKeyRoomPaid, jsonEncode(state.roomPaid));
+      await prefs.setString(CanteenConstants.prefsKeyRoomRanks, jsonEncode(state.roomRanks));
     } catch (_) {}
   }
 
@@ -265,12 +359,92 @@ class CanteenRegisterNotifier extends Notifier<CanteenRegisterState> {
     await _saveToPrefs();
   }
 
+  Future<void> updateRoomPreDue(String room, double preDue) async {
+    final key = state.makeRoomKey(state.activeEntry, state.selectedSquadron, room);
+    final updated = Map<String, double>.from(state.roomPreDues);
+    updated[key] = preDue;
+    state = state.copyWith(roomPreDues: updated);
+    await _saveToPrefs();
+  }
+
+  Future<void> updateRoomPaid(String room, double paid) async {
+    final key = state.makeRoomKey(state.activeEntry, state.selectedSquadron, room);
+    final updated = Map<String, double>.from(state.roomPaid);
+    updated[key] = paid;
+    state = state.copyWith(roomPaid: updated);
+    await _saveToPrefs();
+  }
+
+  Future<void> updateRoomRank(String room, String rank) async {
+    final key = state.makeRoomKey(state.activeEntry, state.selectedSquadron, room);
+    final updated = Map<String, String>.from(state.roomRanks);
+    updated[key] = rank;
+    state = state.copyWith(roomRanks: updated);
+    await _saveToPrefs();
+  }
+
+  /// Initial Pre Due amounts based on the user's scanned register PDF
+  static Map<String, double> _generateInitialPreDues() {
+    final Map<String, double> map = {};
+    const entry = '54';
+    final sampleDues = [
+      420.0, 302.0, 877.0, 1518.0, 430.0, 296.0, 360.0, 234.0,
+      130.0, 405.0, 65.0, 641.0, 699.0, 545.0, 180.0, 240.0,
+    ];
+
+    for (final sqn in CanteenConstants.squadrons) {
+      for (int i = 0; i < CanteenConstants.rooms.length; i++) {
+        final room = CanteenConstants.rooms[i];
+        final key = '$entry|$sqn|$room';
+        map[key] = sampleDues[i % sampleDues.length];
+      }
+    }
+    return map;
+  }
+
+  /// Initial Paid amounts
+  static Map<String, double> _generateInitialPaid() {
+    final Map<String, double> map = {};
+    const entry = '54';
+    final samplePaid = [
+      400.0, 250.0, 800.0, 1500.0, 400.0, 250.0, 300.0, 200.0,
+      100.0, 400.0, 50.0, 600.0, 650.0, 500.0, 150.0, 200.0,
+    ];
+
+    for (final sqn in CanteenConstants.squadrons) {
+      for (int i = 0; i < CanteenConstants.rooms.length; i++) {
+        final room = CanteenConstants.rooms[i];
+        final key = '$entry|$sqn|$room';
+        map[key] = samplePaid[i % samplePaid.length];
+      }
+    }
+    return map;
+  }
+
+  /// Initial Ranks
+  static Map<String, String> _generateInitialRanks() {
+    final Map<String, String> map = {};
+    const entry = '54';
+    final sampleRanks = [
+      'WO', 'WO', 'WO', 'WO', 'Sgt', 'Sgt', 'Sgt', 'Sgt',
+      'Cpl', 'Cpl', 'Cpl', 'Rect Rep', 'Rect Rep', 'Rect Rep', 'Rect Rep', 'Rect Rep'
+    ];
+
+    for (final sqn in CanteenConstants.squadrons) {
+      for (int i = 0; i < CanteenConstants.rooms.length; i++) {
+        final room = CanteenConstants.rooms[i];
+        final key = '$entry|$sqn|$room';
+        map[key] = sampleRanks[i % sampleRanks.length];
+      }
+    }
+    return map;
+  }
+
   static Map<String, DailyRoomExpense> _generateDemoRecords() {
     final Map<String, DailyRoomExpense> result = {};
     final now = DateTime.now();
     const entry = '54';
 
-    // Demo entries across current month for all 4 squadrons and multiple rooms
     final demoSpending = [
       {'room': 'Room 1', 'amt': 420.0, 'items': 'Tea, Cream Biscuits, Snacks', 'rep': 'RCT 54101'},
       {'room': 'Room 2', 'amt': 380.0, 'items': 'Dry Cake, Banana, Milk', 'rep': 'RCT 54102'},

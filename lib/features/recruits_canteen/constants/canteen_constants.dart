@@ -40,4 +40,7 @@ class CanteenConstants {
   static const String prefsKeyEntries = 'rts_canteen_entries_list';
   static const String prefsKeyActiveEntry = 'rts_canteen_active_entry';
   static const String prefsKeyActiveManager = 'rts_canteen_active_manager';
+  static const String prefsKeyRoomDues = 'rts_canteen_room_dues';
+  static const String prefsKeyRoomPaid = 'rts_canteen_room_paid';
+  static const String prefsKeyRoomRanks = 'rts_canteen_room_ranks';
 }
