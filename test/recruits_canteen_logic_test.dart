@@ -188,5 +188,38 @@ void main() {
       notifier.setActiveManager('NCOIC');
       expect(container.read(canteenRegisterProvider).activeManager, 'NCOIC');
     });
+
+    test('Pricing Management Accounting Calculations (Pre Due, Paid, Grand Total, Net Due)', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final notifier = container.read(canteenRegisterProvider.notifier);
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      notifier.addNewEntry('97');
+      notifier.setActiveEntry('97');
+      notifier.setSelectedSquadron('Mansur Ali');
+
+      // Set Pre Due = 420.0
+      await notifier.updateRoomPreDue('Room 3', 420.0);
+      // Set Paid = 300.0
+      await notifier.updateRoomPaid('Room 3', 300.0);
+
+      // Record daily expense of 500.0
+      final date = DateTime(2026, 9, 5);
+      await notifier.recordRoomExpense(
+        room: 'Room 3',
+        amount: 500.0,
+        date: date,
+      );
+
+      final summary = container.read(canteenRegisterProvider).getRoomMonthlySummary('97', 'Mansur Ali', 'Room 3', 2026, 9);
+
+      expect(summary.preDue, 420.0);
+      expect(summary.totalMonthlySpending, 500.0);
+      expect(summary.grandTotal, 920.0); // 420 + 500
+      expect(summary.paid, 300.0);
+      expect(summary.netDue, 620.0); // 920 - 300
+    });
   });
 }
