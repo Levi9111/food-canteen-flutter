@@ -1,8 +1,13 @@
 class AppConstants {
-  static const String appName = 'Food Canteen, RTS';
+  static const String appName = 'Food Canteen RTS';
   static const String institutionName = 'Recruits Training School';
   static const String organizationName = 'Bangladesh Air Force';
   static const String appSubtitle = 'Mess & Canteen Accounts Management System';
+
+  // Assets
+  static const String bafEmblemPath = 'assets/images/Bangladesh Air Force Crest Emblem.png';
+  static const String bafLogoPath = 'assets/images/baf_logo.png';
+  static const String bafCrestPath = 'assets/images/baf_crest.png';
 
   // API Config
   static const String defaultBaseUrl = 'http://localhost:5000/api/v1';
