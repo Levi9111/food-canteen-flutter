@@ -40,6 +40,9 @@ dependencies:
   google_fonts: ^9.0.0
   intl: ^0.20.3
   shared_preferences: ^2.5.5
+  pdf: ^3.13.1
+  printing: ^5.15.1
+  path_provider: ^2.1.6
 
 dev_dependencies:
   flutter_test:
