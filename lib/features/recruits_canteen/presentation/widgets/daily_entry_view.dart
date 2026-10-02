@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../constants/canteen_constants.dart';
 import '../../models/daily_room_expense.dart';
 import '../../providers/canteen_register_provider.dart';
+import '../../../../core/widgets/tactical_card.dart';
 
 class DailyEntryView extends ConsumerStatefulWidget {
   const DailyEntryView({super.key});
@@ -408,18 +409,10 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
         );
         final hasEntry = expense != null && expense.amount > 0;
 
-        return Card(
-          elevation: 0,
-          margin: const EdgeInsets.only(bottom: 8),
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-          color: hasEntry ? AppColors.bafLightBlue.withAlpha(50) : AppColors.ledgerSurface,
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: hasEntry ? AppColors.bafNavy : AppColors.ledgerBorder,
-                width: hasEntry ? 1.5 : 1,
-              ),
-            ),
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: TacticalCard(
+            accentColor: hasEntry ? AppColors.bafGold : null,
             padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
