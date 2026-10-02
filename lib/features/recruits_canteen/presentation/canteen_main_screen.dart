@@ -4,11 +4,17 @@ import '../../../../core/animations/smooth_transitions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/baf_rts_crest.dart';
 import '../../audit/presentation/monthly_audit_view.dart';
+import '../../p_staff_canteen/presentation/widgets/p_staff_daily_entry_view.dart';
+import '../../p_staff_canteen/presentation/widgets/p_staff_monthly_matrix_view.dart';
+import '../../p_staff_canteen/presentation/widgets/p_staff_spreadsheet_view.dart';
+import '../../p_staff_canteen/providers/p_staff_register_provider.dart';
 import '../constants/canteen_constants.dart';
 import '../providers/canteen_register_provider.dart';
 import 'widgets/daily_entry_view.dart';
 import 'widgets/monthly_matrix_view.dart';
 import 'widgets/room_soft_spreadsheet_view.dart';
+
+enum CanteenCustomerGroup { recruits, pStaff }
 
 class CanteenMainScreen extends ConsumerStatefulWidget {
   const CanteenMainScreen({super.key});
@@ -18,14 +24,21 @@ class CanteenMainScreen extends ConsumerStatefulWidget {
 }
 
 class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+    with TickerProviderStateMixin {
+  CanteenCustomerGroup _currentGroup = CanteenCustomerGroup.recruits;
+  late TabController _recruitsTabController;
+  late TabController _pStaffTabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(
+    _recruitsTabController = TabController(
       length: 4,
+      vsync: this,
+      animationDuration: const Duration(milliseconds: 240),
+    );
+    _pStaffTabController = TabController(
+      length: 3,
       vsync: this,
       animationDuration: const Duration(milliseconds: 240),
     );
@@ -33,7 +46,8 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _recruitsTabController.dispose();
+    _pStaffTabController.dispose();
     super.dispose();
   }
 
@@ -82,14 +96,15 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
+                    Wrap(
+                      alignment: WrapAlignment.end,
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
                         OutlinedButton(
                           onPressed: () => Navigator.of(context).pop(),
                           child: const Text('CANCEL'),
                         ),
-                        const SizedBox(width: 8),
                         ElevatedButton(
                           onPressed: () {
                             final val = controller.text.trim();
@@ -115,6 +130,7 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
   void _showContextSettingsModal(BuildContext context, WidgetRef ref) {
     final state = ref.read(canteenRegisterProvider);
     final notifier = ref.read(canteenRegisterProvider.notifier);
+    final staffNotifier = ref.read(pStaffRegisterProvider.notifier);
 
     showModalBottomSheet(
       context: context,
@@ -134,7 +150,7 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'SESSION PARAMETERS',
+                    'SESSION & DUTY PARAMETERS',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -204,6 +220,7 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
                       isSelected: state.activeManager == CanteenConstants.roleNcoic,
                       onTap: () {
                         notifier.setActiveManager(CanteenConstants.roleNcoic);
+                        staffNotifier.setActiveManager(CanteenConstants.roleNcoic);
                         Navigator.pop(ctx);
                       },
                     ),
@@ -216,6 +233,7 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
                       isSelected: state.activeManager == CanteenConstants.roleJcoic,
                       onTap: () {
                         notifier.setActiveManager(CanteenConstants.roleJcoic);
+                        staffNotifier.setActiveManager(CanteenConstants.roleJcoic);
                         Navigator.pop(ctx);
                       },
                     ),
@@ -285,7 +303,7 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
           body: SafeArea(
             child: Column(
               children: [
-                // Streamlined, Compact Tactical Masthead (Reduced from 160px down to ~52px)
+                // 1. Sleek Compact Command Masthead with transparent BAF emblem
                 Container(
                   width: double.infinity,
                   padding: EdgeInsets.symmetric(
@@ -300,11 +318,11 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
                   ),
                   child: Row(
                     children: [
-                      // Official BAF Emblem Crest
+                      // Official BAF Emblem Crest (Transparent Background)
                       BafRtsCrest(size: isMobile ? 32 : 38),
                       const SizedBox(width: 8),
 
-                      // App Title
+                      // Title & Subtitle
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -347,7 +365,7 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
                         ),
                       ),
 
-                      // Quick Tactical Batch & Duty Capsule (Tappable to modify)
+                      // Context Capsule
                       InkWell(
                         onTap: () => _showContextSettingsModal(context, ref),
                         child: Container(
@@ -364,7 +382,9 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    'ENTRY ${state.activeEntry}',
+                                    _currentGroup == CanteenCustomerGroup.recruits
+                                        ? 'ENTRY ${state.activeEntry}'
+                                        : 'P-STAFF',
                                     style: const TextStyle(
                                       color: AppColors.bafGold,
                                       fontSize: 9.5,
@@ -391,46 +411,171 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
                   ),
                 ),
 
-                // Sharp, Sleek Tactical Tab Bar (Zero Curves, Gold Accent)
+                // 2. Customer Group Switcher (Recruits Room-Wise vs Permanent Staffs Individual)
+                Container(
+                  color: AppColors.bafDeepBlue,
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  child: Row(
+                    children: [
+                      // Recruits Canteen Tab Button
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => _currentGroup = CanteenCustomerGroup.recruits),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 5.5),
+                            decoration: BoxDecoration(
+                              color: _currentGroup == CanteenCustomerGroup.recruits ? AppColors.bafGold : Colors.transparent,
+                              border: Border.all(
+                                color: _currentGroup == CanteenCustomerGroup.recruits ? AppColors.bafGold : AppColors.bafGold.withAlpha(80),
+                                width: 1,
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.groups,
+                                  size: 13,
+                                  color: _currentGroup == CanteenCustomerGroup.recruits ? AppColors.bafNavy : Colors.white,
+                                ),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    isMobile ? 'RECRUITS' : '1. RECRUITS CANTEEN (ROOM-WISE)',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: _currentGroup == CanteenCustomerGroup.recruits ? AppColors.bafNavy : Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: isMobile ? 9.5 : 11,
+                                      letterSpacing: 0.2,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      // P-Staffs Canteen Tab Button
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => _currentGroup = CanteenCustomerGroup.pStaff),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 5.5, horizontal: 4),
+                            decoration: BoxDecoration(
+                              color: _currentGroup == CanteenCustomerGroup.pStaff ? AppColors.bafGold : Colors.transparent,
+                              border: Border.all(
+                                color: _currentGroup == CanteenCustomerGroup.pStaff ? AppColors.bafGold : AppColors.bafGold.withAlpha(80),
+                                width: 1,
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.badge,
+                                  size: 13,
+                                  color: _currentGroup == CanteenCustomerGroup.pStaff ? AppColors.bafNavy : Colors.white,
+                                ),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    isMobile ? 'P-STAFFS' : '2. P-STAFFS CANTEEN (INDIVIDUAL)',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: _currentGroup == CanteenCustomerGroup.pStaff ? AppColors.bafNavy : Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: isMobile ? 9.5 : 11,
+                                      letterSpacing: 0.2,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 3. Sub-Module Navigation (TabBar)
                 Container(
                   decoration: const BoxDecoration(
                     color: AppColors.bafNavy,
                     border: Border(bottom: BorderSide(color: AppColors.ledgerBorder, width: 1)),
                   ),
-                  child: TabBar(
-                    controller: _tabController,
-                    isScrollable: false,
-                    indicatorColor: AppColors.bafGold,
-                    indicatorWeight: 3.0,
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    labelColor: AppColors.bafGold,
-                    unselectedLabelColor: Colors.white70,
-                    labelPadding: EdgeInsets.zero,
-                    labelStyle: TextStyle(
-                      fontSize: isMobile ? 10 : 11.5,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.3,
-                    ),
-                    tabs: [
-                      Tab(icon: const Icon(Icons.menu_book, size: 15), text: isMobile ? 'REGISTER' : '1. DAILY REGISTER'),
-                      Tab(icon: const Icon(Icons.grid_on, size: 15), text: isMobile ? 'MATRIX' : '2. MONTHLY MATRIX'),
-                      Tab(icon: const Icon(Icons.table_chart, size: 15), text: isMobile ? 'SPREADSHEET' : '3. ROOM SOFT SPREADSHEET'),
-                      Tab(icon: const Icon(Icons.verified, size: 15), text: isMobile ? 'AUDIT' : '4. AUDIT & RECON'),
-                    ],
-                  ),
+                  child: _currentGroup == CanteenCustomerGroup.recruits
+                      ? TabBar(
+                          controller: _recruitsTabController,
+                          isScrollable: false,
+                          indicatorColor: AppColors.bafGold,
+                          indicatorWeight: 3.0,
+                          indicatorSize: TabBarIndicatorSize.tab,
+                          labelColor: AppColors.bafGold,
+                          unselectedLabelColor: Colors.white70,
+                          labelPadding: EdgeInsets.zero,
+                          labelStyle: TextStyle(
+                            fontSize: isMobile ? 10 : 11.5,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.3,
+                          ),
+                          tabs: [
+                            Tab(icon: const Icon(Icons.menu_book, size: 15), text: isMobile ? 'REGISTER' : '1. DAILY REGISTER'),
+                            Tab(icon: const Icon(Icons.grid_on, size: 15), text: isMobile ? 'MATRIX' : '2. MONTHLY MATRIX'),
+                            Tab(icon: const Icon(Icons.table_chart, size: 15), text: isMobile ? 'SPREADSHEET' : '3. ROOM SOFT SPREADSHEET'),
+                            Tab(icon: const Icon(Icons.verified, size: 15), text: isMobile ? 'AUDIT' : '4. AUDIT & RECON'),
+                          ],
+                        )
+                      : TabBar(
+                          controller: _pStaffTabController,
+                          isScrollable: false,
+                          indicatorColor: AppColors.bafGold,
+                          indicatorWeight: 3.0,
+                          indicatorSize: TabBarIndicatorSize.tab,
+                          labelColor: AppColors.bafGold,
+                          unselectedLabelColor: Colors.white70,
+                          labelPadding: EdgeInsets.zero,
+                          labelStyle: TextStyle(
+                            fontSize: isMobile ? 10 : 11.5,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.3,
+                          ),
+                          tabs: [
+                            Tab(icon: const Icon(Icons.person, size: 15), text: isMobile ? 'STAFF BOOK' : '1. DAILY REGISTER'),
+                            Tab(icon: const Icon(Icons.grid_on, size: 15), text: isMobile ? 'MATRIX' : '2. MONTHLY MATRIX'),
+                            Tab(icon: const Icon(Icons.picture_as_pdf, size: 15), text: isMobile ? 'STATEMENT' : '3. STAFF STATEMENT (PDF)'),
+                          ],
+                        ),
                 ),
 
-                // Tab Views
+                // 4. Tab Views
                 Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: const [
-                      DailyEntryView(),
-                      MonthlyMatrixView(),
-                      RoomSoftSpreadsheetView(),
-                      MonthlyAuditView(),
-                    ],
-                  ),
+                  child: _currentGroup == CanteenCustomerGroup.recruits
+                      ? TabBarView(
+                          controller: _recruitsTabController,
+                          children: const [
+                            DailyEntryView(),
+                            MonthlyMatrixView(),
+                            RoomSoftSpreadsheetView(),
+                            MonthlyAuditView(),
+                          ],
+                        )
+                      : TabBarView(
+                          controller: _pStaffTabController,
+                          children: const [
+                            PStaffDailyEntryView(),
+                            PStaffMonthlyMatrixView(),
+                            PStaffSpreadsheetView(),
+                          ],
+                        ),
                 ),
               ],
             ),
