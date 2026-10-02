@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/animations/smooth_transitions.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/tactical_card.dart';
 import '../../constants/canteen_constants.dart';
 import '../../providers/canteen_register_provider.dart';
 
@@ -32,7 +31,6 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
     );
     final sqnPreDueTotal = state.getSquadronPreDueTotal(state.activeEntry, state.selectedSquadron);
     final sqnPaidTotal = state.getSquadronPaidTotal(state.activeEntry, state.selectedSquadron);
-    final sqnGrandTotal = state.getSquadronGrandTotal(state.activeEntry, state.selectedSquadron, state.selectedYear, state.selectedMonth);
     final sqnNetDueTotal = state.getSquadronNetDueTotal(state.activeEntry, state.selectedSquadron, state.selectedYear, state.selectedMonth);
 
     final monthsList = [
@@ -48,11 +46,52 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Filter & Month Command Ribbon
+            // 1. Non-Scrollable Responsive 4-Squadron Segmented Bar (Zero scroll conflicts)
+            Container(
+              color: AppColors.bafNavy,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Row(
+                children: CanteenConstants.squadrons.map((sqn) {
+                  final isSelected = sqn == state.selectedSquadron;
+                  return Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: InkWell(
+                        onTap: () => notifier.setSelectedSquadron(sqn),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 7),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.bafGold : AppColors.bafDeepBlue,
+                            border: Border.all(
+                              color: isSelected ? AppColors.bafGold : AppColors.bafDeepBlue,
+                              width: 1,
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            isMobile ? sqn.split(' ').first.toUpperCase() : '$sqn SQN',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: isSelected ? AppColors.bafNavy : Colors.white,
+                              fontSize: isMobile ? 10.5 : 12,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+
+            // 2. Compact Period Navigator & View Switch
             Container(
               padding: EdgeInsets.symmetric(
-                horizontal: isMobile ? 10 : 16,
-                vertical: isMobile ? 8 : 10,
+                horizontal: isMobile ? 8 : 16,
+                vertical: 6,
               ),
               decoration: const BoxDecoration(
                 color: AppColors.ledgerSurface,
@@ -62,20 +101,12 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    // Month Selector
-                    const Text(
-                      'MONTH:',
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
+                    const Text('PERIOD:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppColors.ledgerSurface,
+                        color: Colors.white,
                         border: Border.all(color: AppColors.ledgerBorder),
                       ),
                       child: DropdownButton<int>(
@@ -85,7 +116,7 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                         items: List.generate(12, (i) => i + 1).map((m) {
                           return DropdownMenuItem(
                             value: m,
-                            child: Text(monthsList[m - 1], style: const TextStyle(fontSize: 12)),
+                            child: Text(monthsList[m - 1], style: const TextStyle(fontSize: 11)),
                           );
                         }).toList(),
                         onChanged: (val) {
@@ -93,12 +124,11 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                         },
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    // Year Selector
+                    const SizedBox(width: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppColors.ledgerSurface,
+                        color: Colors.white,
                         border: Border.all(color: AppColors.ledgerBorder),
                       ),
                       child: DropdownButton<int>(
@@ -108,7 +138,7 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                         items: [2025, 2026, 2027].map((y) {
                           return DropdownMenuItem(
                             value: y,
-                            child: Text('$y', style: const TextStyle(fontSize: 12)),
+                            child: Text('$y', style: const TextStyle(fontSize: 11)),
                           );
                         }).toList(),
                         onChanged: (val) {
@@ -119,59 +149,29 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
 
                     const SizedBox(width: 14),
 
-                    // Squadron Selector
-                    const Text(
-                      'SQN:',
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Row(
-                      children: CanteenConstants.squadrons.map((sqn) {
-                        final isSelected = sqn == state.selectedSquadron;
-                        return Padding(
-                          padding: const EdgeInsets.only(left: 4),
-                          child: InkWell(
-                            onTap: () => notifier.setSelectedSquadron(sqn),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: isSelected ? AppColors.bafDeepBlue : AppColors.ledgerSurface,
-                                border: Border.all(
-                                  color: isSelected ? AppColors.bafDeepBlue : AppColors.ledgerBorder,
-                                  width: isSelected ? 1.5 : 1,
-                                ),
-                              ),
-                              child: Text(
-                                '$sqn Sqn',
-                                style: TextStyle(
-                                  color: isSelected ? Colors.white : AppColors.textPrimary,
-                                  fontSize: 11,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                ),
-                              ),
+                    // Mode Toggle Button
+                    InkWell(
+                      onTap: () => setState(() => _forceMatrixTable = !_forceMatrixTable),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _forceMatrixTable ? AppColors.bafDeepBlue : AppColors.bafNavy,
+                          border: Border.all(color: AppColors.bafGold),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _forceMatrixTable ? Icons.view_agenda : Icons.grid_on,
+                              size: 13,
+                              color: AppColors.bafGold,
                             ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-
-                    const SizedBox(width: 14),
-
-                    // Quick Info
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                      color: AppColors.bafNavy,
-                      child: Text(
-                        'ENTRY ${state.activeEntry} • ${monthsList[state.selectedMonth - 1].toUpperCase()} ${state.selectedYear}',
-                        style: const TextStyle(
-                          color: AppColors.bafGold,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
+                            const SizedBox(width: 4),
+                            Text(
+                              _forceMatrixTable ? 'CARD VIEW' : 'FULL TABLE',
+                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -180,122 +180,53 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
               ),
             ),
 
-            // Tactical Metric Calculation Ribbon (4 Precision Metrics aligned with PDF)
+            // 3. Compact Squadron Accounting Strip (No horizontal scrolling on mobile)
             Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: isMobile ? 10 : 16,
-                vertical: isMobile ? 6 : 8,
-              ),
-              color: AppColors.bafNavy.withAlpha(8),
-              child: LayoutBuilder(
-                builder: (context, boxConstraints) {
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 175,
-                          child: TacticalMetricBox(
-                            label: 'PREVIOUS DUE',
-                            value: '৳ ${currencyFormat.format(sqnPreDueTotal)}',
-                            subtitle: 'Carried forward',
-                            valueColor: AppColors.balanceAlert,
-                            accentColor: AppColors.balanceAlert,
-                            icon: Icons.history,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                          width: 175,
-                          child: TacticalMetricBox(
-                            label: 'MONTH SPENDING',
-                            value: '৳ ${currencyFormat.format(sqnMonthGrandTotal)}',
-                            subtitle: 'Current period sum',
-                            valueColor: AppColors.debitRed,
-                            accentColor: AppColors.debitRed,
-                            icon: Icons.shopping_cart_outlined,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                          width: 175,
-                          child: TacticalMetricBox(
-                            label: 'TOTAL PAID',
-                            value: '৳ ${currencyFormat.format(sqnPaidTotal)}',
-                            subtitle: 'Collections received',
-                            valueColor: AppColors.creditGreen,
-                            accentColor: AppColors.creditGreen,
-                            icon: Icons.payments_outlined,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                          width: 185,
-                          child: TacticalMetricBox(
-                            label: 'CLOSING NET DUE',
-                            value: '৳ ${currencyFormat.format(sqnNetDueTotal)}',
-                            subtitle: 'Gross: ৳ ${currencyFormat.format(sqnGrandTotal)}',
-                            valueColor: AppColors.bafDeepBlue,
-                            accentColor: AppColors.bafGold,
-                            icon: Icons.account_balance_wallet,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            // View Mode Toggle Strip
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              color: AppColors.ledgerSurface,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              color: AppColors.bafNavy,
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      'PRICING REGISTER • ${state.selectedSquadron.toUpperCase()} SQN (ENTRY ${state.activeEntry})',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textSecondary,
-                        letterSpacing: 0.5,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('PRE DUE', style: TextStyle(fontSize: 8, color: Colors.white70, fontWeight: FontWeight.bold)),
+                        Text('৳ ${currencyFormat.format(sqnPreDueTotal)}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900, color: AppColors.balanceAlert)),
+                      ],
                     ),
                   ),
-                  InkWell(
-                    onTap: () => setState(() => _forceMatrixTable = !_forceMatrixTable),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: _forceMatrixTable ? AppColors.bafDeepBlue : AppColors.bafNavy,
-                        border: Border.all(color: AppColors.bafGold),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _forceMatrixTable ? Icons.view_agenda : Icons.grid_on,
-                            size: 13,
-                            color: AppColors.bafGold,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _forceMatrixTable ? 'CARD VIEW' : 'FULL LEDGER TABLE',
-                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('MONTH SPEND', style: TextStyle(fontSize: 8, color: Colors.white70, fontWeight: FontWeight.bold)),
+                        Text('৳ ${currencyFormat.format(sqnMonthGrandTotal)}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900, color: Colors.white)),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('PAID', style: TextStyle(fontSize: 8, color: Colors.white70, fontWeight: FontWeight.bold)),
+                        Text('৳ ${currencyFormat.format(sqnPaidTotal)}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900, color: Colors.greenAccent)),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('NET DUE', style: TextStyle(fontSize: 8, color: AppColors.bafGold, fontWeight: FontWeight.bold)),
+                        Text('৳ ${currencyFormat.format(sqnNetDueTotal)}', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900, color: AppColors.bafGold)),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
 
-            // Content Area: Mobile Cards or Full Cross-Sectional Table
+            // 4. Content Area
             Expanded(
               child: (isMobile && !_forceMatrixTable)
                   ? _buildMobileRoomMonthlyCards(context, state, daysInMonth, currencyFormat)
@@ -315,7 +246,7 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
     NumberFormat currencyFormat,
   ) {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       itemCount: CanteenConstants.rooms.length,
       itemBuilder: (context, idx) {
         final room = CanteenConstants.rooms[idx];
@@ -344,140 +275,138 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
         }
 
         return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: TacticalCard(
-            accentColor: netDue > 0 ? AppColors.bafGold : AppColors.cleared,
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top Header Row
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      color: AppColors.bafNavy,
-                      child: Text(
-                        '#${idx + 1}',
-                        style: const TextStyle(
-                          color: AppColors.bafGold,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10,
+          padding: const EdgeInsets.only(bottom: 7),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(
+                color: netDue > 0 ? AppColors.bafGold : AppColors.ledgerBorder,
+                width: netDue > 0 ? 1.5 : 1.0,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header Row
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        color: AppColors.bafNavy,
+                        child: Text(
+                          '#${idx + 1}',
+                          style: const TextStyle(
+                            color: AppColors.bafGold,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 9.5,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    TacticalBadge(
-                      label: rank,
-                      backgroundColor: AppColors.bafDeepBlue,
-                      fontSize: 9,
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
+                      const SizedBox(width: 6),
+                      Text(
                         room,
                         style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
                           color: AppColors.bafNavy,
                         ),
                       ),
-                    ),
-                    InkWell(
-                      onTap: () => _showRoomAccountEditModal(context, ref, room, preDue, paid, rank),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.bafLightBlue,
-                          border: Border.all(color: AppColors.bafDeepBlue),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.edit, size: 11, color: AppColors.bafDeepBlue),
-                            SizedBox(width: 2),
-                            Text('EDIT', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: AppColors.bafDeepBlue)),
-                          ],
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        color: AppColors.bafLightBlue,
+                        child: Text(
+                          rank,
+                          style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: AppColors.bafDeepBlue),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 10),
-
-                // Calculations Grid (PreDue, Month Spend, Paid, Net Due)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  color: AppColors.ledgerBackground,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('PRE DUE', style: TextStyle(fontSize: 8.5, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
-                            Text('৳ ${currencyFormat.format(preDue)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.balanceAlert)),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('THIS MONTH', style: TextStyle(fontSize: 8.5, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
-                            Text('৳ ${currencyFormat.format(roomTotal)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.debitRed)),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('PAID', style: TextStyle(fontSize: 8.5, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
-                            Text('৳ ${currencyFormat.format(paid)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.creditGreen)),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('NET DUE', style: TextStyle(fontSize: 8.5, color: AppColors.bafNavy, fontWeight: FontWeight.bold)),
-                            Text('৳ ${currencyFormat.format(netDue)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: AppColors.bafNavy)),
-                          ],
+                      const Spacer(),
+                      InkWell(
+                        onTap: () => _showRoomAccountEditModal(context, ref, room, preDue, paid, rank),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.bafLightBlue,
+                            border: Border.all(color: AppColors.bafDeepBlue),
+                          ),
+                          child: const Text('EDIT ACCOUNT', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.bafDeepBlue)),
                         ),
                       ),
                     ],
                   ),
-                ),
 
-                const SizedBox(height: 6),
+                  const SizedBox(height: 8),
 
-                // Active Days footer
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '$activeDays visit${activeDays == 1 ? '' : 's'} recorded this month',
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 9.5, color: AppColors.textMuted),
-                      ),
+                  // Calculations Row (Pre Due, Month, Paid, Net Due)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    color: AppColors.ledgerBackground,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('PRE DUE', style: TextStyle(fontSize: 8, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
+                              Text('৳ ${currencyFormat.format(preDue)}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.balanceAlert)),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('THIS MONTH', style: TextStyle(fontSize: 8, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
+                              Text('৳ ${currencyFormat.format(roomTotal)}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.debitRed)),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('PAID', style: TextStyle(fontSize: 8, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
+                              Text('৳ ${currencyFormat.format(paid)}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.creditGreen)),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('NET DUE', style: TextStyle(fontSize: 8, color: AppColors.bafNavy, fontWeight: FontWeight.bold)),
+                              Text('৳ ${currencyFormat.format(netDue)}', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900, color: AppColors.bafNavy)),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      netDue <= 0 ? 'NIL BALANCE' : 'DUE PENDING',
-                      style: TextStyle(
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.bold,
-                        color: netDue <= 0 ? AppColors.cleared : AppColors.balanceAlert,
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  // Active Days & Status
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '$activeDays visit${activeDays == 1 ? '' : 's'} recorded',
+                        style: const TextStyle(fontSize: 9, color: AppColors.textMuted),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      Text(
+                        netDue <= 0 ? 'CLEARED' : 'PENDING',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: netDue <= 0 ? AppColors.cleared : AppColors.balanceAlert,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -497,35 +426,35 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Container(
-          margin: const EdgeInsets.all(12),
+          margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: AppColors.ledgerSurface,
             border: Border.all(color: AppColors.ledgerBorder, width: 1.0),
           ),
           child: DataTable(
-            headingRowHeight: 38,
-            dataRowMinHeight: 36,
-            dataRowMaxHeight: 42,
+            headingRowHeight: 36,
+            dataRowMinHeight: 34,
+            dataRowMaxHeight: 40,
             horizontalMargin: 8,
-            columnSpacing: 10,
+            columnSpacing: 8,
             headingRowColor: WidgetStateProperty.all(AppColors.bafNavy),
             columns: [
-              const DataColumn(label: Text('RK', style: TextStyle(color: AppColors.bafGold, fontWeight: FontWeight.bold, fontSize: 10))),
-              const DataColumn(label: Text('ROOM / NAME', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11))),
-              const DataColumn(label: Text('PRE DUE', style: TextStyle(color: AppColors.bafGold, fontWeight: FontWeight.bold, fontSize: 10))),
+              const DataColumn(label: Text('RK', style: TextStyle(color: AppColors.bafGold, fontWeight: FontWeight.bold, fontSize: 9.5))),
+              const DataColumn(label: Text('ROOM / NAME', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10.5))),
+              const DataColumn(label: Text('PRE DUE', style: TextStyle(color: AppColors.bafGold, fontWeight: FontWeight.bold, fontSize: 9.5))),
               ...List.generate(daysInMonth, (d) {
                 final dayNum = d + 1;
                 return DataColumn(
                   label: Text(
                     '$dayNum',
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 );
               }),
-              const DataColumn(label: Text('MONTH', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70))),
-              const DataColumn(label: Text('TOTAL', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppColors.bafGold))),
-              const DataColumn(label: Text('PAID', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.creditGreen))),
-              const DataColumn(label: Text('DUE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.white))),
+              const DataColumn(label: Text('MONTH', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.white70))),
+              const DataColumn(label: Text('TOTAL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.bafGold))),
+              const DataColumn(label: Text('PAID', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: AppColors.creditGreen))),
+              const DataColumn(label: Text('DUE', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900, color: Colors.white))),
             ],
             rows: [
               // Each Room Row
@@ -556,7 +485,7 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                         onTap: () => _showRoomAccountEditModal(context, ref, room, preDue, paid, rank),
                         child: Text(
                           rank,
-                          style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                          style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
                         ),
                       ),
                     ),
@@ -567,7 +496,7 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                         child: Text(
                           room,
                           style: const TextStyle(
-                            fontSize: 11,
+                            fontSize: 10.5,
                             fontWeight: FontWeight.bold,
                             color: AppColors.bafNavy,
                           ),
@@ -581,7 +510,7 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                         child: Text(
                           preDue > 0 ? preDue.toStringAsFixed(0) : '-',
                           style: const TextStyle(
-                            fontSize: 10,
+                            fontSize: 9.5,
                             fontWeight: FontWeight.bold,
                             color: AppColors.balanceAlert,
                           ),
@@ -610,7 +539,7 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                             child: Text(
                               hasVal ? expense.amount.toStringAsFixed(0) : '-',
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 9.5,
                                 fontWeight: hasVal ? FontWeight.bold : FontWeight.normal,
                                 color: hasVal ? AppColors.debitRed : AppColors.textMuted,
                               ),
@@ -623,14 +552,14 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                     DataCell(
                       Text(
                         currencyFormat.format(roomMonthTotal),
-                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.debitRed),
+                        style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: AppColors.debitRed),
                       ),
                     ),
                     // Grand Total
                     DataCell(
                       Text(
                         currencyFormat.format(grandTotal),
-                        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: AppColors.bafNavy),
+                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.bafNavy),
                       ),
                     ),
                     // Paid
@@ -639,7 +568,7 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                         onTap: () => _showRoomAccountEditModal(context, ref, room, preDue, paid, rank),
                         child: Text(
                           paid > 0 ? currencyFormat.format(paid) : '-',
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.creditGreen),
+                          style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: AppColors.creditGreen),
                         ),
                       ),
                     ),
@@ -648,7 +577,7 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                       Text(
                         currencyFormat.format(netDue),
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 10.5,
                           fontWeight: FontWeight.w900,
                           color: netDue > 0 ? AppColors.debitRed : AppColors.cleared,
                         ),
@@ -658,7 +587,7 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                 );
               }),
 
-              // Grand Total Footer Row (Identical to scanned PDF Page 4)
+              // Grand Total Footer Row
               DataRow(
                 color: WidgetStateProperty.all(AppColors.bafNavy),
                 cells: [
@@ -666,7 +595,7 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                     Text(
                       'TOTAL',
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 9.5,
                         fontWeight: FontWeight.w900,
                         color: AppColors.bafGold,
                       ),
@@ -676,25 +605,23 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                     Text(
                       'GRAND TOTAL',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 10.5,
                         fontWeight: FontWeight.w900,
                         color: AppColors.bafGold,
                         letterSpacing: 0.5,
                       ),
                     ),
                   ),
-                  // Total Pre Due
                   DataCell(
                     Text(
                       currencyFormat.format(state.getSquadronPreDueTotal(state.activeEntry, state.selectedSquadron)),
                       style: const TextStyle(
-                        fontSize: 10.5,
+                        fontSize: 10,
                         fontWeight: FontWeight.w900,
                         color: AppColors.bafGold,
                       ),
                     ),
                   ),
-                  // Each Day Total
                   ...List.generate(daysInMonth, (d) {
                     final dayNum = d + 1;
                     final date = DateTime(state.selectedYear, state.selectedMonth, dayNum);
@@ -709,39 +636,35 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                       Text(
                         hasVal ? dayTotal.toStringAsFixed(0) : '-',
                         style: TextStyle(
-                          fontSize: 9.5,
+                          fontSize: 9,
                           fontWeight: FontWeight.bold,
                           color: hasVal ? Colors.white : Colors.white38,
                         ),
                       ),
                     );
                   }),
-                  // Squadron Month Total
                   DataCell(
                     Text(
                       currencyFormat.format(state.getSquadronMonthTotal(state.activeEntry, state.selectedSquadron, state.selectedYear, state.selectedMonth)),
-                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900, color: Colors.white),
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white),
                     ),
                   ),
-                  // Grand Total
                   DataCell(
                     Text(
                       currencyFormat.format(state.getSquadronGrandTotal(state.activeEntry, state.selectedSquadron, state.selectedYear, state.selectedMonth)),
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.bafGold),
+                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900, color: AppColors.bafGold),
                     ),
                   ),
-                  // Squadron Total Paid
                   DataCell(
                     Text(
                       currencyFormat.format(state.getSquadronPaidTotal(state.activeEntry, state.selectedSquadron)),
-                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900, color: Colors.greenAccent),
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.greenAccent),
                     ),
                   ),
-                  // Squadron Net Closing Due
                   DataCell(
                     Text(
                       currencyFormat.format(state.getSquadronNetDueTotal(state.activeEntry, state.selectedSquadron, state.selectedYear, state.selectedMonth)),
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.white),
                     ),
                   ),
                 ],

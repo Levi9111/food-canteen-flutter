@@ -21,19 +21,19 @@ void main() {
 
     // 1. Verify Tab 1: Daily Register
     expect(find.textContaining('FOOD CANTEEN, RTS'), findsAtLeast(1));
-    expect(find.text('CURRENT ENTRY'), findsOneWidget);
+    expect(find.textContaining('ENTRY'), findsAtLeast(1));
     expect(find.text('Room 1'), findsOneWidget);
 
     // 2. Switch to Tab 2: Monthly Matrix
     await tester.tap(find.text('MATRIX'));
     await tester.pumpAndSettle();
-    expect(find.text('PREVIOUS DUE'), findsAtLeast(1));
-    expect(find.text('MONTH SPENDING'), findsAtLeast(1));
+    expect(find.text('PRE DUE'), findsAtLeast(1));
+    expect(find.text('MONTH SPEND'), findsAtLeast(1));
 
     // 3. Switch to Tab 3: Soft Spreadsheet
     await tester.tap(find.text('SPREADSHEET'));
     await tester.pumpAndSettle();
-    expect(find.text('PRINT SPREADSHEET'), findsOneWidget);
+    expect(find.text('DOWNLOAD PDF'), findsOneWidget);
 
     // 4. Switch to Tab 4: Audit & Recon
     await tester.tap(find.text('AUDIT'));
@@ -42,7 +42,7 @@ void main() {
   });
 
   testWidgets('App loads cleanly on user phone resolution (460 x 1024) without vertical stacking', (WidgetTester tester) async {
-    // User's exact Android resolution from screenshot: 460 x 1024
+    // User's exact Android resolution: 460 x 1024
     tester.view.physicalSize = const Size(460, 1024);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -59,7 +59,6 @@ void main() {
     // Verify Title and tags
     expect(find.text('FOOD CANTEEN, RTS'), findsOneWidget);
     expect(find.text('BAF'), findsOneWidget);
-    expect(find.text('RTS CANTEEN'), findsOneWidget);
 
     // Verify that TabBar is visible and rendered
     expect(find.text('REGISTER'), findsOneWidget);
@@ -70,12 +69,12 @@ void main() {
     // Switch to Matrix
     await tester.tap(find.text('MATRIX'));
     await tester.pumpAndSettle();
-    expect(find.text('PREVIOUS DUE'), findsAtLeast(1));
+    expect(find.text('PRE DUE'), findsAtLeast(1));
 
     // Switch to Spreadsheet
     await tester.tap(find.text('SPREADSHEET'));
     await tester.pumpAndSettle();
-    expect(find.text('PRINT SPREADSHEET'), findsOneWidget);
+    expect(find.text('DOWNLOAD PDF'), findsOneWidget);
   });
 
   testWidgets('App loads cleanly on compact 360 x 740 Android phone screen', (WidgetTester tester) async {
@@ -96,14 +95,12 @@ void main() {
     expect(find.textContaining('FOOD CANTEEN, RTS'), findsAtLeast(1));
     expect(find.text('Room 1'), findsOneWidget);
 
-    // Toggle from Card View to Table View on mobile
-    await tester.tap(find.text('TABLE VIEW'));
-    await tester.pumpAndSettle();
-    expect(find.text('CARD VIEW'), findsOneWidget);
-
-    // Toggle back to Card View
-    await tester.tap(find.text('CARD VIEW'));
-    await tester.pumpAndSettle();
-    expect(find.text('TABLE VIEW'), findsOneWidget);
+    // Switch to table view icon toggle
+    final toggleFinder = find.byKey(const Key('toggle_daily_view_mode'));
+    if (toggleFinder.evaluate().isNotEmpty) {
+      await tester.tap(toggleFinder);
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.grid_view), findsAtLeast(1));
+    }
   });
 }

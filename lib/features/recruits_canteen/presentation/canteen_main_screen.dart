@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/animations/smooth_transitions.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/baf_rts_crest.dart';
-import '../../../../core/widgets/tactical_card.dart';
 import '../../audit/presentation/monthly_audit_view.dart';
 import '../constants/canteen_constants.dart';
 import '../providers/canteen_register_provider.dart';
@@ -29,7 +27,7 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
     _tabController = TabController(
       length: 4,
       vsync: this,
-      animationDuration: const Duration(milliseconds: 280),
+      animationDuration: const Duration(milliseconds: 240),
     );
   }
 
@@ -47,7 +45,7 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
       child: Dialog(
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
         child: Container(
-          width: 380,
+          width: 360,
           decoration: BoxDecoration(
             color: AppColors.ledgerSurface,
             border: Border.all(color: AppColors.bafNavy, width: 2),
@@ -57,11 +55,11 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 color: AppColors.bafNavy,
                 child: const Text(
                   'CREATE NEW RECRUIT ENTRY BATCH',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11.5),
                 ),
               ),
               Padding(
@@ -70,15 +68,18 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'ENTRY NUMBER (e.g. 55, 56):',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                      'ENTRY BATCH NUMBER (e.g. 55, 56):',
+                      style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 6),
                     TextField(
                       controller: controller,
                       keyboardType: TextInputType.number,
                       autofocus: true,
-                      decoration: const InputDecoration(hintText: 'Enter batch number'),
+                      decoration: const InputDecoration(
+                        hintText: 'Enter batch number',
+                        isDense: true,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Row(
@@ -111,204 +112,286 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
     );
   }
 
+  void _showContextSettingsModal(BuildContext context, WidgetRef ref) {
+    final state = ref.read(canteenRegisterProvider);
+    final notifier = ref.read(canteenRegisterProvider.notifier);
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+      backgroundColor: AppColors.ledgerSurface,
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: const BoxDecoration(
+            border: Border(top: BorderSide(color: AppColors.bafGold, width: 2)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'SESSION PARAMETERS',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.6,
+                      color: AppColors.bafNavy,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const Divider(),
+              const SizedBox(height: 6),
+              const Text('ACTIVE RECRUIT ENTRY BATCH', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.ledgerBorder),
+                        color: Colors.white,
+                      ),
+                      child: DropdownButton<String>(
+                        value: state.activeEntry,
+                        isExpanded: true,
+                        underline: const SizedBox(),
+                        items: state.allEntries.map((e) {
+                          return DropdownMenuItem(value: e, child: Text('Entry $e'));
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            notifier.setActiveEntry(val);
+                            Navigator.pop(ctx);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.add, size: 14),
+                    label: const Text('NEW BATCH'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.bafDeepBlue,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _showNewEntryDialog(context, ref);
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              const Text('DUTY IN-CHARGE OFFICER', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildManagerSelectTile(
+                      title: 'SGT (NCOIC)',
+                      subtitle: 'Sergeant In-Charge',
+                      isSelected: state.activeManager == CanteenConstants.roleNcoic,
+                      onTap: () {
+                        notifier.setActiveManager(CanteenConstants.roleNcoic);
+                        Navigator.pop(ctx);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildManagerSelectTile(
+                      title: 'WO (JCOIC)',
+                      subtitle: 'Warrant Officer In-Charge',
+                      isSelected: state.activeManager == CanteenConstants.roleJcoic,
+                      onTap: () {
+                        notifier.setActiveManager(CanteenConstants.roleJcoic);
+                        Navigator.pop(ctx);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildManagerSelectTile({
+    required String title,
+    required String subtitle,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.bafNavy : Colors.white,
+          border: Border.all(
+            color: isSelected ? AppColors.bafGold : AppColors.ledgerBorder,
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? AppColors.bafGold : AppColors.bafNavy,
+              ),
+            ),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 9,
+                color: isSelected ? Colors.white70 : AppColors.textMuted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(canteenRegisterProvider);
-    final notifier = ref.read(canteenRegisterProvider.notifier);
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final screenWidth = constraints.maxWidth;
         final isMobile = screenWidth < 800;
-        final isCompact = screenWidth < 500;
 
         return Scaffold(
           backgroundColor: AppColors.ledgerBackground,
           body: SafeArea(
             child: Column(
               children: [
-                // Top Master Military Masthead (Tactical, Zero Curves, Never Wraps Vertically)
+                // Streamlined, Compact Tactical Masthead (Reduced from 160px down to ~52px)
                 Container(
                   width: double.infinity,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 10 : 16,
+                    vertical: isMobile ? 6 : 8,
+                  ),
                   decoration: const BoxDecoration(
                     color: AppColors.bafNavy,
                     border: Border(
-                      bottom: BorderSide(color: AppColors.bafGold, width: 2.0),
+                      bottom: BorderSide(color: AppColors.bafGold, width: 1.5),
                     ),
                   ),
-                  child: Stack(
+                  child: Row(
                     children: [
-                      // Subtle tactical corner bracket markings on top header
-                      Positioned(
-                        top: 2,
-                        right: 4,
-                        child: Text(
-                          'BAF-RTS // AUTH',
-                          style: TextStyle(
-                            fontSize: 7.5,
-                            color: AppColors.bafGold.withAlpha(90),
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.0,
-                          ),
+                      // Official BAF Emblem Crest
+                      BafRtsCrest(size: isMobile ? 32 : 38),
+                      const SizedBox(width: 8),
+
+                      // App Title
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    'FOOD CANTEEN, RTS',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: isMobile ? 13 : 15,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                  color: AppColors.bafRoundelGreen,
+                                  child: const Text(
+                                    'BAF',
+                                    style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              'Recruits Training School • Shamshernagar',
+                              style: TextStyle(
+                                color: Colors.white.withAlpha(180),
+                                fontSize: isMobile ? 8.5 : 10,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
 
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isCompact ? 10 : 16,
-                          vertical: isCompact ? 8 : 10,
-                        ),
-                        child: isMobile
-                            ? Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                      // Quick Tactical Batch & Duty Capsule (Tappable to modify)
+                      InkWell(
+                        onTap: () => _showContextSettingsModal(context, ref),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.bafDeepBlue,
+                            border: Border.all(color: AppColors.bafGold.withAlpha(180), width: 1),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  // Tier 1: Logo & App Title Row
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      // Official BAF Emblem Crest
-                                      const BafRtsCrest(size: 38),
-                                      const SizedBox(width: 10),
-
-                                      // Main Title Block (Protected against any flex crush)
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                const TacticalBadge(
-                                                  label: 'BAF',
-                                                  backgroundColor: AppColors.bafRoundelGreen,
-                                                  textColor: Colors.white,
-                                                  fontSize: 8.5,
-                                                  padding: EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                                ),
-                                                const SizedBox(width: 5),
-                                                const TacticalBadge(
-                                                  label: 'RTS CANTEEN',
-                                                  backgroundColor: AppColors.bafDeepBlue,
-                                                  borderColor: AppColors.bafGold,
-                                                  textColor: AppColors.bafGold,
-                                                  fontSize: 8.5,
-                                                  padding: EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 3),
-                                            const Text(
-                                              'FOOD CANTEEN, RTS',
-                                              maxLines: 1,
-                                              softWrap: false,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w900,
-                                                letterSpacing: 0.6,
-                                              ),
-                                            ),
-                                            const Text(
-                                              'Recruits Room-Wise Daily Price Register',
-                                              maxLines: 1,
-                                              softWrap: false,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                color: Colors.white70,
-                                                fontSize: 9.5,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-
-                                  const SizedBox(height: 8),
-
-                                  // Tier 2: Tactical Controls Bar (Batch & Duty In-Charge)
-                                  SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    child: Row(
-                                      children: [
-                                        _buildBatchSelector(state, notifier),
-                                        const SizedBox(width: 8),
-                                        _buildDutySelector(state, notifier),
-                                      ],
+                                  Text(
+                                    'ENTRY ${state.activeEntry}',
+                                    style: const TextStyle(
+                                      color: AppColors.bafGold,
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                ],
-                              )
-                            : Row(
-                                children: [
-                                  // Official BAF Emblem Crest
-                                  const BafRtsCrest(size: 46),
-                                  const SizedBox(width: 14),
-
-                                  // Titles & Subtitles
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            const TacticalBadge(
-                                              label: 'BANGLADESH AIR FORCE',
-                                              backgroundColor: AppColors.bafRoundelGreen,
-                                              textColor: Colors.white,
-                                              fontSize: 9,
-                                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                                            ),
-                                            const SizedBox(width: 6),
-                                            const TacticalBadge(
-                                              label: 'RECRUITS TRAINING SCHOOL (RTS)',
-                                              backgroundColor: AppColors.bafDeepBlue,
-                                              borderColor: AppColors.bafGold,
-                                              textColor: AppColors.bafGold,
-                                              fontSize: 9,
-                                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 3),
-                                        Text(
-                                          'FOOD CANTEEN, RTS',
-                                          maxLines: 1,
-                                          softWrap: false,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: AppTextStyles.titleLarge(Colors.white),
-                                        ),
-                                        const Text(
-                                          'Recruits Room-Wise Daily Price Register & Monthly Spreadsheets',
-                                          maxLines: 1,
-                                          softWrap: false,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(color: Colors.white70, fontSize: 11),
-                                        ),
-                                      ],
+                                  Text(
+                                    state.activeManager,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 8.5,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
-
-                                  const SizedBox(width: 14),
-
-                                  // Tactical Batch Selector
-                                  _buildBatchSelector(state, notifier),
-                                  const SizedBox(width: 10),
-
-                                  // Tactical Duty Selector
-                                  _buildDutySelector(state, notifier),
                                 ],
                               ),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.arrow_drop_down, color: AppColors.bafGold, size: 16),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
 
-                // Sharp Military Tab Navigation (Strict Zero Curves, Gold Accents)
+                // Sharp, Sleek Tactical Tab Bar (Zero Curves, Gold Accent)
                 Container(
                   decoration: const BoxDecoration(
                     color: AppColors.bafNavy,
@@ -316,30 +399,24 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
                   ),
                   child: TabBar(
                     controller: _tabController,
-                    isScrollable: !isMobile,
+                    isScrollable: false,
                     indicatorColor: AppColors.bafGold,
-                    indicatorWeight: 3.5,
+                    indicatorWeight: 3.0,
                     indicatorSize: TabBarIndicatorSize.tab,
                     labelColor: AppColors.bafGold,
                     unselectedLabelColor: Colors.white70,
+                    labelPadding: EdgeInsets.zero,
                     labelStyle: TextStyle(
-                      fontSize: isMobile ? 9.5 : 11.5,
+                      fontSize: isMobile ? 10 : 11.5,
                       fontWeight: FontWeight.bold,
-                      letterSpacing: isMobile ? 0.2 : 0.6,
+                      letterSpacing: 0.3,
                     ),
-                    tabs: isMobile
-                        ? const [
-                            Tab(icon: Icon(Icons.menu_book, size: 16), text: 'REGISTER'),
-                            Tab(icon: Icon(Icons.grid_on, size: 16), text: 'MATRIX'),
-                            Tab(icon: Icon(Icons.table_chart, size: 16), text: 'SPREADSHEET'),
-                            Tab(icon: Icon(Icons.verified, size: 16), text: 'AUDIT'),
-                          ]
-                        : const [
-                            Tab(icon: Icon(Icons.menu_book, size: 16), text: '1. DAILY REGISTER (ROOM BOOK)'),
-                            Tab(icon: Icon(Icons.grid_on, size: 16), text: '2. MONTHLY MATRIX (ALL ROOMS)'),
-                            Tab(icon: Icon(Icons.table_chart, size: 16), text: '3. ROOM SOFT SPREADSHEET (PRINTABLE)'),
-                            Tab(icon: Icon(Icons.verified, size: 16), text: '4. AUDIT & RECONCILIATION SHEET'),
-                          ],
+                    tabs: [
+                      Tab(icon: const Icon(Icons.menu_book, size: 15), text: isMobile ? 'REGISTER' : '1. DAILY REGISTER'),
+                      Tab(icon: const Icon(Icons.grid_on, size: 15), text: isMobile ? 'MATRIX' : '2. MONTHLY MATRIX'),
+                      Tab(icon: const Icon(Icons.table_chart, size: 15), text: isMobile ? 'SPREADSHEET' : '3. ROOM SOFT SPREADSHEET'),
+                      Tab(icon: const Icon(Icons.verified, size: 15), text: isMobile ? 'AUDIT' : '4. AUDIT & RECON'),
+                    ],
                   ),
                 ),
 
@@ -355,160 +432,11 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
                     ],
                   ),
                 ),
-
-                // Bottom Military Status Ribbon (Sharp & Crisp)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                  color: AppColors.bafNavy,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          isMobile
-                              ? 'RTS BAF • OFFICIAL CANTEEN PRICING REGISTER'
-                              : 'SECURITY: OFFICIAL USE ONLY • RECRUITS TRAINING SCHOOL (RTS) • BANGLADESH AIR FORCE',
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.bafGold,
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.6,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'ENTRY ${state.activeEntry} • ${state.activeManager}',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
           ),
         );
       },
-    );
-  }
-
-  Widget _buildBatchSelector(CanteenRegisterState state, CanteenRegisterNotifier notifier) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: AppColors.bafDeepBlue,
-        border: Border.all(color: AppColors.bafGold.withAlpha(160), width: 1.0),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
-            'ENTRY:',
-            style: TextStyle(
-              color: AppColors.bafGold,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(width: 6),
-          DropdownButton<String>(
-            value: state.activeEntry,
-            dropdownColor: AppColors.bafNavy,
-            underline: const SizedBox(),
-            isDense: true,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
-            ),
-            items: state.allEntries.map((e) {
-              return DropdownMenuItem(
-                value: e,
-                child: Text('Entry $e'),
-              );
-            }).toList(),
-            onChanged: (val) {
-              if (val != null) notifier.setActiveEntry(val);
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.add_circle, color: AppColors.bafGold, size: 16),
-            tooltip: 'Add Batch',
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            onPressed: () => _showNewEntryDialog(context, ref),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDutySelector(CanteenRegisterState state, CanteenRegisterNotifier notifier) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: AppColors.bafDeepBlue,
-        border: Border.all(color: AppColors.bafGold.withAlpha(160), width: 1.0),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
-            'DUTY:',
-            style: TextStyle(
-              color: AppColors.bafGold,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(width: 6),
-          _buildManagerChip(
-            title: CanteenConstants.roleNcoic,
-            isSelected: state.activeManager == CanteenConstants.roleNcoic,
-            onTap: () => notifier.setActiveManager(CanteenConstants.roleNcoic),
-          ),
-          const SizedBox(width: 4),
-          _buildManagerChip(
-            title: CanteenConstants.roleJcoic,
-            isSelected: state.activeManager == CanteenConstants.roleJcoic,
-            onTap: () => notifier.setActiveManager(CanteenConstants.roleJcoic),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildManagerChip({
-    required String title,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.bafGold : Colors.transparent,
-          border: Border.all(
-            color: isSelected ? AppColors.bafGold : AppColors.bafGold.withAlpha(120),
-            width: 1.0,
-          ),
-        ),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 10.5,
-            fontWeight: FontWeight.w800,
-            color: isSelected ? AppColors.bafNavy : Colors.white,
-          ),
-        ),
-      ),
     );
   }
 }

@@ -6,7 +6,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../constants/canteen_constants.dart';
 import '../../models/daily_room_expense.dart';
 import '../../providers/canteen_register_provider.dart';
-import '../../../../core/widgets/tactical_card.dart';
 
 class DailyEntryView extends ConsumerStatefulWidget {
   const DailyEntryView({super.key});
@@ -22,7 +21,6 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
   Widget build(BuildContext context) {
     final state = ref.watch(canteenRegisterProvider);
     final notifier = ref.read(canteenRegisterProvider.notifier);
-    final dateFormat = DateFormat('EEEE, dd MMMM yyyy');
     final currencyFormat = NumberFormat('#,##0.00', 'en_US');
     final isMobile = MediaQuery.of(context).size.width < 768;
 
@@ -44,31 +42,74 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Date & Command Control Bar
+        // 1. Non-Scrollable Responsive 4-Squadron Segmented Bar (Zero scroll conflicts)
+        Container(
+          color: AppColors.bafNavy,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Row(
+            children: CanteenConstants.squadrons.map((sqn) {
+              final isSelected = sqn == state.selectedSquadron;
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: InkWell(
+                    onTap: () => notifier.setSelectedSquadron(sqn),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 7),
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppColors.bafGold : AppColors.bafDeepBlue,
+                        border: Border.all(
+                          color: isSelected ? AppColors.bafGold : AppColors.bafDeepBlue,
+                          width: 1,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        isMobile ? sqn.split(' ').first.toUpperCase() : '$sqn SQN',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: isSelected ? AppColors.bafNavy : Colors.white,
+                          fontSize: isMobile ? 10.5 : 12,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+
+        // 2. Compact Date Navigator Bar & Quick Action
         Container(
           padding: EdgeInsets.symmetric(
-            horizontal: isMobile ? 10 : 16,
-            vertical: isMobile ? 8 : 10,
+            horizontal: isMobile ? 8 : 16,
+            vertical: 6,
           ),
           decoration: const BoxDecoration(
             color: AppColors.ledgerSurface,
             border: Border(bottom: BorderSide(color: AppColors.ledgerBorderLight)),
           ),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                // Date Navigation
-                IconButton(
-                  icon: const Icon(Icons.chevron_left, size: 20),
-                  tooltip: 'Previous Day',
-                  onPressed: () {
-                    notifier.setSelectedDate(
-                      state.selectedDate.subtract(const Duration(days: 1)),
-                    );
-                  },
-                ),
-                InkWell(
+          child: Row(
+            children: [
+              // Day step back
+              IconButton(
+                icon: const Icon(Icons.chevron_left, size: 20),
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Previous Day',
+                onPressed: () {
+                  notifier.setSelectedDate(
+                    state.selectedDate.subtract(const Duration(days: 1)),
+                  );
+                },
+              ),
+
+              // Date Picker Button
+              Expanded(
+                child: InkWell(
                   onTap: () async {
                     final picked = await showDatePicker(
                       context: context,
@@ -79,308 +120,123 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                     if (picked != null) notifier.setSelectedDate(picked);
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppColors.bafNavy,
-                      border: Border.all(color: AppColors.bafGold),
+                      color: AppColors.ledgerBackground,
+                      border: Border.all(color: AppColors.ledgerBorder),
                     ),
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.calendar_today, size: 13, color: AppColors.bafGold),
+                        const Icon(Icons.calendar_today, size: 12, color: AppColors.bafNavy),
                         const SizedBox(width: 6),
-                        Text(
-                          DateFormat('dd MMM yyyy').format(state.selectedDate).toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right, size: 20),
-                  tooltip: 'Next Day',
-                  onPressed: () {
-                    notifier.setSelectedDate(
-                      state.selectedDate.add(const Duration(days: 1)),
-                    );
-                  },
-                ),
-                const SizedBox(width: 4),
-                OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  ),
-                  onPressed: () => notifier.setSelectedDate(DateTime.now()),
-                  child: const Text('TODAY', style: TextStyle(fontSize: 11)),
-                ),
-
-                const SizedBox(width: 14),
-
-                // Squadron Selector Tabs
-                Row(
-                  children: CanteenConstants.squadrons.map((sqn) {
-                    final isSelected = sqn == state.selectedSquadron;
-                    return Padding(
-                      padding: const EdgeInsets.only(left: 4),
-                      child: InkWell(
-                        onTap: () => notifier.setSelectedSquadron(sqn),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          curve: Curves.easeOutCubic,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: isSelected ? AppColors.bafDeepBlue : AppColors.ledgerSurface,
-                            border: Border.all(
-                              color: isSelected ? AppColors.bafDeepBlue : AppColors.ledgerBorder,
-                              width: isSelected ? 1.5 : 1,
-                            ),
-                          ),
+                        Flexible(
                           child: Text(
-                            '$sqn Sqn',
-                            style: TextStyle(
-                              color: isSelected ? Colors.white : AppColors.textPrimary,
+                            DateFormat(isMobile ? 'dd MMM yyyy' : 'EEE, dd MMM yyyy')
+                                .format(state.selectedDate)
+                                .toUpperCase(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppColors.bafNavy,
                               fontSize: 11,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        // Daily Calculation Summary Ribbon (Responsive)
-        Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: isMobile ? 12 : 16,
-            vertical: isMobile ? 8 : 10,
-          ),
-          color: AppColors.bafLightBlue,
-          child: isMobile
-              ? Column(
-                  children: [
-                    // Mobile Row 1: Entry & Duty Officer
-                    Row(
-                      children: [
-                        SmoothAnimatedMetricCard(
-                          title: 'CURRENT ENTRY',
-                          value: double.tryParse(state.activeEntry) ?? 54.0,
-                          prefix: 'Entry ',
-                          textColor: AppColors.bafNavy,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                            decoration: BoxDecoration(
-                              color: AppColors.ledgerSurface,
-                              border: Border.all(color: AppColors.bafGold, width: 1.5),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text(
-                                  'DUTY IN-CHARGE',
-                                  style: TextStyle(
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.textMuted,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                      color: AppColors.bafNavy,
-                                      child: Text(
-                                        state.activeManager,
-                                        style: const TextStyle(
-                                          color: AppColors.bafGold,
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    const Flexible(
-                                      child: Text(
-                                        'PRESENT',
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: 9.5,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.cleared,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    // Mobile Row 2: Selected Sqn Total & All Sqns Grand Total
-                    Row(
-                      children: [
-                        SmoothAnimatedMetricCard(
-                          title: '${state.selectedSquadron.toUpperCase()} SQN DAY',
-                          value: sqnDayTotal,
-                          textColor: AppColors.bafDeepBlue,
-                        ),
-                        const SizedBox(width: 8),
-                        SmoothAnimatedMetricCard(
-                          title: 'ALL SQNS DAY TOTAL',
-                          value: allSqnDayTotal,
-                          textColor: AppColors.debitRed,
-                        ),
-                      ],
-                    ),
-                  ],
-                )
-              : Row(
-                  children: [
-                    SmoothAnimatedMetricCard(
-                      title: 'CURRENT ENTRY',
-                      value: double.tryParse(state.activeEntry) ?? 54.0,
-                      prefix: 'Entry ',
-                      textColor: AppColors.bafNavy,
-                    ),
-                    const SizedBox(width: 12),
-                    SmoothAnimatedMetricCard(
-                      title: '${state.selectedSquadron.toUpperCase()} SQN DAY TOTAL',
-                      value: sqnDayTotal,
-                      textColor: AppColors.bafDeepBlue,
-                    ),
-                    const SizedBox(width: 12),
-                    SmoothAnimatedMetricCard(
-                      title: 'ALL SQUADRONS DAY TOTAL',
-                      value: allSqnDayTotal,
-                      textColor: AppColors.debitRed,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppColors.ledgerSurface,
-                          border: Border.all(color: AppColors.bafGold, width: 1.5),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text(
-                              'LOGGING OFFICER IN-CHARGE',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textMuted,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                  color: AppColors.bafNavy,
-                                  child: Text(
-                                    state.activeManager,
-                                    style: const TextStyle(
-                                      color: AppColors.bafGold,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'PRESENT AT CANTEEN',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.cleared,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-        ),
-
-        // Section Bar with View Switcher
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          color: AppColors.ledgerSurface,
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '${state.selectedSquadron.toUpperCase()} SQN • 16 ROOMS REGISTER (${dateFormat.format(state.selectedDate).toUpperCase()})',
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textSecondary,
-                    letterSpacing: 0.5,
                   ),
                 ),
               ),
-              if (isMobile)
-                InkWell(
-                  onTap: () => setState(() => _forceTableView = !_forceTableView),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: _forceTableView ? AppColors.bafDeepBlue : AppColors.bafNavy,
-                      border: Border.all(color: AppColors.bafGold),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _forceTableView ? Icons.grid_view : Icons.table_chart,
-                          size: 13,
-                          color: AppColors.bafGold,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _forceTableView ? 'CARD VIEW' : 'TABLE VIEW',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+
+              // Day step forward
+              IconButton(
+                icon: const Icon(Icons.chevron_right, size: 20),
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Next Day',
+                onPressed: () {
+                  notifier.setSelectedDate(
+                    state.selectedDate.add(const Duration(days: 1)),
+                  );
+                },
+              ),
+
+              // Today Button
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  visualDensity: VisualDensity.compact,
                 ),
+                onPressed: () => notifier.setSelectedDate(DateTime.now()),
+                child: const Text('TODAY', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+
+              if (isMobile) ...[
+                const SizedBox(width: 6),
+                IconButton(
+                  key: const Key('toggle_daily_view_mode'),
+                  icon: Icon(_forceTableView ? Icons.grid_view : Icons.table_chart, size: 16),
+                  visualDensity: VisualDensity.compact,
+                  tooltip: _forceTableView ? 'Switch to Cards' : 'Switch to Table',
+                  onPressed: () => setState(() => _forceTableView = !_forceTableView),
+                ),
+              ],
             ],
           ),
         ),
 
-        // Daily Rooms List / Table
+        // 3. Crisp Unified Daily Calculation Ribbon (No clutter, No nested horizontal scroll)
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          color: AppColors.bafLightBlue.withAlpha(120),
+          child: Row(
+            children: [
+              Expanded(
+                child: RichText(
+                  text: TextSpan(
+                    style: const TextStyle(fontSize: 11, color: AppColors.textPrimary),
+                    children: [
+                      TextSpan(
+                        text: '${state.selectedSquadron.toUpperCase()} SQN: ',
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.bafDeepBlue),
+                      ),
+                      TextSpan(
+                        text: '৳ ${currencyFormat.format(sqnDayTotal)}',
+                        style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.bafNavy),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                height: 14,
+                width: 1,
+                color: AppColors.ledgerBorder,
+                margin: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              RichText(
+                text: TextSpan(
+                  style: const TextStyle(fontSize: 11, color: AppColors.textPrimary),
+                  children: [
+                    const TextSpan(
+                      text: 'ALL SQNS: ',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                    ),
+                    TextSpan(
+                      text: '৳ ${currencyFormat.format(allSqnDayTotal)}',
+                      style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.debitRed),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // 4. Room Register List (Fluid Vertical Scrolling without Gesture Clashes)
         Expanded(
           child: (isMobile && !_forceTableView)
               ? _buildMobileRoomCards(context, state, currencyFormat)
@@ -390,14 +246,14 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
     );
   }
 
-  /// Mobile-first responsive card list
+  /// Mobile-first smart tactical room card list
   Widget _buildMobileRoomCards(
     BuildContext context,
     CanteenRegisterState state,
     NumberFormat currencyFormat,
   ) {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       itemCount: CanteenConstants.rooms.length,
       itemBuilder: (context, idx) {
         final room = CanteenConstants.rooms[idx];
@@ -410,116 +266,128 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
         final hasEntry = expense != null && expense.amount > 0;
 
         return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: TacticalCard(
-            accentColor: hasEntry ? AppColors.bafGold : null,
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Card Header: Room Name & Today's Price Badge
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          padding: const EdgeInsets.only(bottom: 7),
+          child: Container(
+            decoration: BoxDecoration(
+              color: hasEntry ? Colors.white : AppColors.ledgerSurface,
+              border: Border.all(
+                color: hasEntry ? AppColors.bafGold : AppColors.ledgerBorder,
+                width: hasEntry ? 1.5 : 1.0,
+              ),
+            ),
+            child: InkWell(
+              onTap: () {
+                _showDailyExpenseModal(
+                  context,
+                  ref,
+                  room: room,
+                  existingExpense: expense,
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          color: AppColors.bafNavy,
-                          child: Text(
-                            '#${idx + 1}',
-                            style: const TextStyle(color: AppColors.bafGold, fontSize: 10, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          room,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.bafNavy,
-                          ),
-                        ),
-                      ],
-                    ),
+                    // Index Tag & Room Number
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      color: hasEntry ? AppColors.bafDeepBlue : AppColors.ledgerBorderLight,
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      color: hasEntry ? AppColors.bafNavy : AppColors.ledgerBorderLight,
                       child: Text(
-                        hasEntry ? '৳ ${currencyFormat.format(expense.amount)}' : '৳ 0.00 (NIL)',
+                        '#${idx + 1}',
                         style: TextStyle(
-                          color: hasEntry ? AppColors.bafGold : AppColors.textMuted,
-                          fontSize: 12.5,
+                          color: hasEntry ? AppColors.bafGold : AppColors.textSecondary,
+                          fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
+                    const SizedBox(width: 10),
+
+                    // Room & Entry Details
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                room,
+                                style: const TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.bafNavy,
+                                ),
+                              ),
+                              if (hasEntry) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                  color: AppColors.bafLightBlue,
+                                  child: Text(
+                                    expense.recordedBy,
+                                    style: const TextStyle(
+                                      fontSize: 8.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.bafDeepBlue,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            hasEntry
+                                ? (expense.representativeName != null && expense.representativeName!.isNotEmpty
+                                    ? 'Rep: ${expense.representativeName}'
+                                    : (expense.itemsDescription ?? 'Consumption recorded'))
+                                : 'No price recorded today',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              color: hasEntry ? AppColors.textPrimary : AppColors.textMuted,
+                              fontStyle: hasEntry ? FontStyle.normal : FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    // Price Badge & Quick Action Button
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          hasEntry ? '৳ ${currencyFormat.format(expense.amount)}' : '৳ 0.00',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w900,
+                            color: hasEntry ? AppColors.debitRed : AppColors.textMuted,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: hasEntry ? AppColors.bafDeepBlue : AppColors.bafGold,
+                          ),
+                          child: Text(
+                            hasEntry ? 'EDIT' : '+ LOG',
+                            style: TextStyle(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w900,
+                              color: hasEntry ? Colors.white : AppColors.bafNavy,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-
-                const SizedBox(height: 8),
-
-                // Details Row
-                if (hasEntry) ...[
-                  Row(
-                    children: [
-                      const Icon(Icons.person, size: 14, color: AppColors.textSecondary),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Rep: ${expense.representativeName ?? "Attended"}',
-                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
-                      ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                        color: AppColors.bafNavy,
-                        child: Text(
-                          expense.recordedBy,
-                          style: const TextStyle(color: AppColors.bafGold, fontSize: 9.5, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.shopping_bag_outlined, size: 14, color: AppColors.textSecondary),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          expense.itemsDescription ?? 'Snacks & refreshments',
-                          style: const TextStyle(fontSize: 11, color: AppColors.textPrimary),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                ],
-
-                // Action Button
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton.icon(
-                    icon: Icon(hasEntry ? Icons.edit : Icons.add, size: 14),
-                    label: Text(hasEntry ? 'EDIT PRICE' : 'LOG PRICE'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: hasEntry ? AppColors.bafDeepBlue : AppColors.bafGold,
-                      foregroundColor: hasEntry ? Colors.white : AppColors.bafNavy,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                    ),
-                    onPressed: () {
-                      _showDailyExpenseModal(
-                        context,
-                        ref,
-                        room: room,
-                        existingExpense: expense,
-                      );
-                    },
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         );
@@ -527,7 +395,7 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
     );
   }
 
-  /// Desktop Data Table
+  /// Desktop Data Table View
   Widget _buildDesktopDataTable(
     BuildContext context,
     CanteenRegisterState state,
@@ -550,13 +418,13 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
               dataRowMaxHeight: 52,
               headingRowColor: WidgetStateProperty.all(AppColors.bafNavy),
               columns: const [
-                DataColumn(label: Text('#')),
-                DataColumn(label: Text('ROOM')),
-                DataColumn(label: Text('ROOM REPRESENTATIVE')),
-                DataColumn(label: Text('CANTEEN ITEMS / PARTICULARS')),
-                DataColumn(label: Text('RECORDED BY')),
-                DataColumn(label: Text('TODAY\'S PRICE (TK)')),
-                DataColumn(label: Text('ACTION')),
+                DataColumn(label: Text('#', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                DataColumn(label: Text('ROOM', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                DataColumn(label: Text('ROOM REPRESENTATIVE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                DataColumn(label: Text('CANTEEN PARTICULARS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                DataColumn(label: Text('DUTY', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                DataColumn(label: Text('PRICE (TK)', style: TextStyle(color: AppColors.bafGold, fontWeight: FontWeight.bold))),
+                DataColumn(label: Text('ACTION', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
               ],
               rows: List.generate(CanteenConstants.rooms.length, (idx) {
                 final room = CanteenConstants.rooms[idx];
@@ -572,7 +440,7 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                 return DataRow(
                   color: WidgetStateProperty.all(
                     hasEntry
-                        ? (isEven ? AppColors.bafLightBlue.withAlpha(80) : AppColors.bafLightBlue.withAlpha(50))
+                        ? (isEven ? AppColors.bafLightBlue.withAlpha(90) : AppColors.bafLightBlue.withAlpha(50))
                         : (isEven ? AppColors.ledgerSurface : AppColors.ledgerStripe),
                   ),
                   cells: [
@@ -628,14 +496,14 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: hasEntry ? FontWeight.bold : FontWeight.normal,
-                          color: hasEntry ? AppColors.bafNavy : AppColors.textMuted,
+                          color: hasEntry ? AppColors.debitRed : AppColors.textMuted,
                         ),
                       ),
                     ),
                     DataCell(
                       ElevatedButton.icon(
                         icon: Icon(hasEntry ? Icons.edit : Icons.add, size: 13),
-                        label: Text(hasEntry ? 'EDIT' : 'ENTER PRICE'),
+                        label: Text(hasEntry ? 'EDIT' : 'ENTER'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: hasEntry ? AppColors.bafDeepBlue : AppColors.bafGold,
                           foregroundColor: hasEntry ? Colors.white : AppColors.bafNavy,
@@ -687,7 +555,7 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
       child: Dialog(
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 500),
+          constraints: const BoxConstraints(maxWidth: 480),
           decoration: BoxDecoration(
             color: AppColors.ledgerSurface,
             border: Border.all(color: AppColors.bafNavy, width: 2),
@@ -710,7 +578,7 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                           'CANTEEN BOOK — ${state.selectedSquadron.toUpperCase()} SQN • $room',
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 12.5,
+                            fontSize: 12,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -728,20 +596,20 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Info Row
+                      // Context Strip
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         color: AppColors.bafLightBlue,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
                               dateFormat.format(state.selectedDate).toUpperCase(),
-                              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold),
+                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
                             ),
                             Text(
                               'ENTRY: ${state.activeEntry}',
-                              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold),
+                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
@@ -749,7 +617,7 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                               child: Text(
                                 state.activeManager,
                                 style: const TextStyle(
-                                  fontSize: 10,
+                                  fontSize: 9.5,
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.bafGold,
                                 ),
@@ -783,6 +651,7 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                         decoration: const InputDecoration(
                           prefixText: '৳ ',
                           hintText: '0.00',
+                          isDense: true,
                         ),
                       ),
 
@@ -801,7 +670,8 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                       TextField(
                         controller: repController,
                         decoration: const InputDecoration(
-                          hintText: 'e.g. RCT Tariqul (Chest 42) / Room Head',
+                          hintText: 'e.g. Recruit Tariqul (Chest 42) / Room Rep',
+                          isDense: true,
                         ),
                       ),
 
@@ -820,7 +690,8 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                       TextField(
                         controller: itemsController,
                         decoration: const InputDecoration(
-                          hintText: 'e.g. Tea, Biscuits, Soap, Dry Canteen Items',
+                          hintText: 'e.g. Snacks, biscuits, tea, toiletries',
+                          isDense: true,
                         ),
                       ),
 
@@ -838,6 +709,10 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                           ElevatedButton.icon(
                             icon: const Icon(Icons.check, size: 16),
                             label: const Text('SAVE PRICE IN BOOK'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.bafNavy,
+                              foregroundColor: AppColors.bafGold,
+                            ),
                             onPressed: () async {
                               final amt = double.tryParse(amountController.text.trim()) ?? 0.0;
                               await ref.read(canteenRegisterProvider.notifier).recordRoomExpense(
@@ -856,6 +731,7 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                                   SnackBar(
                                     content: Text('Saved: $room - ৳ ${amt.toStringAsFixed(2)}'),
                                     backgroundColor: AppColors.cleared,
+                                    duration: const Duration(seconds: 2),
                                   ),
                                 );
                               }
