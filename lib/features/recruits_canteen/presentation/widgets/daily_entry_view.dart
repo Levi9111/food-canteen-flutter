@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/animations/smooth_transitions.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/modal_action_bar.dart';
-import '../../constants/canteen_constants.dart';
+import '../../../../core/widgets/squadron_dropdown.dart';
 import '../../models/daily_room_expense.dart';
 import '../../providers/canteen_register_provider.dart';
+import '../../providers/canteen_structure_provider.dart';
 
 class DailyEntryView extends ConsumerStatefulWidget {
   const DailyEntryView({super.key});
@@ -25,6 +27,8 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
     final currencyFormat = NumberFormat('#,##0.00', 'en_US');
     final isMobile = MediaQuery.of(context).size.width < 768;
 
+    final structure = ref.watch(canteenStructureProvider);
+
     final sqnDayTotal = state.getSquadronDayTotal(
       state.activeEntry,
       state.selectedSquadron,
@@ -32,7 +36,7 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
     );
 
     double allSqnDayTotal = 0.0;
-    for (final sqn in CanteenConstants.squadrons) {
+    for (final sqn in structure.squadrons) {
       allSqnDayTotal += state.getSquadronDayTotal(
         state.activeEntry,
         sqn,
@@ -43,44 +47,15 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // 1. Non-Scrollable Responsive 4-Squadron Segmented Bar (Zero scroll conflicts)
-        Container(
-          color: AppColors.bafNavy,
+        // 1. Tactical Squadron Selection Dropdown
+        Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Row(
-            children: CanteenConstants.squadrons.map((sqn) {
-              final isSelected = sqn == state.selectedSquadron;
-              return Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: InkWell(
-                    onTap: () => notifier.setSelectedSquadron(sqn),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 7),
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppColors.bafGold : AppColors.bafDeepBlue,
-                        border: Border.all(
-                          color: isSelected ? AppColors.bafGold : AppColors.bafDeepBlue,
-                          width: 1,
-                        ),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        isMobile ? sqn.split(' ').first.toUpperCase() : '$sqn SQN',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: isSelected ? AppColors.bafNavy : Colors.white,
-                          fontSize: isMobile ? 10.5 : 12,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
+          child: SquadronDropdown(
+            squadrons: structure.squadrons,
+            selectedSquadron: state.selectedSquadron,
+            onChanged: (sqn) => notifier.setSelectedSquadron(sqn),
+            dayTotal: sqnDayTotal,
+            showDayTotal: true,
           ),
         ),
 
@@ -253,11 +228,13 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
     CanteenRegisterState state,
     NumberFormat currencyFormat,
   ) {
+    final rooms = ref.watch(canteenStructureProvider).getRoomsForSquadron(state.selectedSquadron);
+
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      itemCount: CanteenConstants.rooms.length,
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, AppSpacing.bottomInset),
+      itemCount: rooms.length,
       itemBuilder: (context, idx) {
-        final room = CanteenConstants.rooms[idx];
+        final room = rooms[idx];
         final expense = state.getExpense(
           state.activeEntry,
           state.selectedSquadron,
@@ -427,9 +404,11 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                 DataColumn(label: Text('PRICE (TK)', style: TextStyle(color: AppColors.bafGold, fontWeight: FontWeight.bold))),
                 DataColumn(label: Text('ACTION', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
               ],
-              rows: List.generate(CanteenConstants.rooms.length, (idx) {
-                final room = CanteenConstants.rooms[idx];
-                final expense = state.getExpense(
+              rows: List.generate(
+                ref.watch(canteenStructureProvider).getRoomsForSquadron(state.selectedSquadron).length,
+                (idx) {
+                  final room = ref.watch(canteenStructureProvider).getRoomsForSquadron(state.selectedSquadron)[idx];
+                  final expense = state.getExpense(
                   state.activeEntry,
                   state.selectedSquadron,
                   room,

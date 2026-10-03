@@ -3,6 +3,7 @@ import 'package:food_canteen/features/p_staff_canteen/constants/p_staff_constant
 import 'package:food_canteen/features/p_staff_canteen/models/p_staff_models.dart';
 import 'package:food_canteen/features/p_staff_canteen/providers/p_staff_register_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:food_canteen/features/recruits_canteen/presentation/canteen_main_screen.dart';
 import 'package:food_canteen/main.dart';
 
 void main() {
@@ -83,7 +84,7 @@ void main() {
 
   group('P-Staff UI Smoke Test', () {
     testWidgets('App displays customer switcher and switches between Recruits and P-Staffs', (tester) async {
-      await tester.pumpWidget(const ProviderScope(child: RtsFoodCanteenApp()));
+      await tester.pumpWidget(const ProviderScope(child: RtsFoodCanteenApp(home: CanteenMainScreen())));
       await tester.pumpAndSettle();
 
       // Check customer switcher exists

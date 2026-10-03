@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/animations/smooth_transitions.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../constants/canteen_constants.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/squadron_dropdown.dart';
 import '../../providers/canteen_register_provider.dart';
+import '../../providers/canteen_structure_provider.dart';
 
 class MonthlyMatrixView extends ConsumerStatefulWidget {
   const MonthlyMatrixView({super.key});
@@ -46,44 +48,15 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 1. Non-Scrollable Responsive 4-Squadron Segmented Bar (Zero scroll conflicts)
-            Container(
-              color: AppColors.bafNavy,
+            // 1. Tactical Squadron Selection Dropdown
+            Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Row(
-                children: CanteenConstants.squadrons.map((sqn) {
-                  final isSelected = sqn == state.selectedSquadron;
-                  return Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                      child: InkWell(
-                        onTap: () => notifier.setSelectedSquadron(sqn),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 7),
-                          decoration: BoxDecoration(
-                            color: isSelected ? AppColors.bafGold : AppColors.bafDeepBlue,
-                            border: Border.all(
-                              color: isSelected ? AppColors.bafGold : AppColors.bafDeepBlue,
-                              width: 1,
-                            ),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            isMobile ? sqn.split(' ').first.toUpperCase() : '$sqn SQN',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: isSelected ? AppColors.bafNavy : Colors.white,
-                              fontSize: isMobile ? 10.5 : 12,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
+              child: SquadronDropdown(
+                squadrons: ref.watch(canteenStructureProvider).squadrons,
+                selectedSquadron: state.selectedSquadron,
+                onChanged: (sqn) => notifier.setSelectedSquadron(sqn),
+                dayTotal: sqnMonthGrandTotal,
+                showDayTotal: false,
               ),
             ),
 
@@ -245,11 +218,13 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
     int daysInMonth,
     NumberFormat currencyFormat,
   ) {
+    final rooms = ref.watch(canteenStructureProvider).getRoomsForSquadron(state.selectedSquadron);
+
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      itemCount: CanteenConstants.rooms.length,
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, AppSpacing.bottomInset),
+      itemCount: rooms.length,
       itemBuilder: (context, idx) {
-        final room = CanteenConstants.rooms[idx];
+        final room = rooms[idx];
         final rank = state.getRoomRank(state.activeEntry, state.selectedSquadron, room);
         final preDue = state.getRoomPreDue(state.activeEntry, state.selectedSquadron, room);
         final paid = state.getRoomPaid(state.activeEntry, state.selectedSquadron, room);
@@ -458,9 +433,11 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
             ],
             rows: [
               // Each Room Row
-              ...List.generate(CanteenConstants.rooms.length, (idx) {
-                final room = CanteenConstants.rooms[idx];
-                final isEven = idx % 2 == 0;
+              ...List.generate(
+                ref.watch(canteenStructureProvider).getRoomsForSquadron(state.selectedSquadron).length,
+                (idx) {
+                  final room = ref.watch(canteenStructureProvider).getRoomsForSquadron(state.selectedSquadron)[idx];
+                  final isEven = idx % 2 == 0;
                 final rank = state.getRoomRank(state.activeEntry, state.selectedSquadron, room);
                 final preDue = state.getRoomPreDue(state.activeEntry, state.selectedSquadron, room);
                 final paid = state.getRoomPaid(state.activeEntry, state.selectedSquadron, room);

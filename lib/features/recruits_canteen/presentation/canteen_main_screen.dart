@@ -4,16 +4,17 @@ import '../../../../core/animations/smooth_transitions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/baf_rts_crest.dart';
 import '../../../../core/widgets/modal_action_bar.dart';
+import '../../../../core/widgets/rts_bottom_nav_bar.dart';
 import '../../audit/presentation/monthly_audit_view.dart';
 import '../../p_staff_canteen/presentation/widgets/p_staff_daily_entry_view.dart';
 import '../../p_staff_canteen/presentation/widgets/p_staff_monthly_matrix_view.dart';
 import '../../p_staff_canteen/presentation/widgets/p_staff_spreadsheet_view.dart';
 import '../../p_staff_canteen/providers/p_staff_register_provider.dart';
+import '../../settings/presentation/settings_screen.dart';
 import '../constants/canteen_constants.dart';
 import '../providers/canteen_register_provider.dart';
 import 'widgets/daily_entry_view.dart';
 import 'widgets/monthly_matrix_view.dart';
-import 'widgets/room_soft_spreadsheet_view.dart';
 
 enum CanteenCustomerGroup { recruits, pStaff }
 
@@ -24,33 +25,10 @@ class CanteenMainScreen extends ConsumerStatefulWidget {
   ConsumerState<CanteenMainScreen> createState() => _CanteenMainScreenState();
 }
 
-class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
-    with TickerProviderStateMixin {
+class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen> {
   CanteenCustomerGroup _currentGroup = CanteenCustomerGroup.recruits;
-  late TabController _recruitsTabController;
-  late TabController _pStaffTabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _recruitsTabController = TabController(
-      length: 4,
-      vsync: this,
-      animationDuration: const Duration(milliseconds: 240),
-    );
-    _pStaffTabController = TabController(
-      length: 3,
-      vsync: this,
-      animationDuration: const Duration(milliseconds: 240),
-    );
-  }
-
-  @override
-  void dispose() {
-    _recruitsTabController.dispose();
-    _pStaffTabController.dispose();
-    super.dispose();
-  }
+  int _recruitsIndex = 0;
+  int _pStaffIndex = 0;
 
   void _showNewEntryDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController();
@@ -192,6 +170,7 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.bafDeepBlue,
                       foregroundColor: Colors.white,
+                      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
                     ),
                     onPressed: () {
                       Navigator.pop(ctx);
@@ -292,10 +271,24 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
 
         return Scaffold(
           backgroundColor: AppColors.ledgerBackground,
+          // Bottom Navigation Bar with BAF military styling
+          bottomNavigationBar: RtsBottomNavBar(
+            currentIndex: _currentGroup == CanteenCustomerGroup.recruits ? _recruitsIndex : _pStaffIndex,
+            isRecruitsGroup: _currentGroup == CanteenCustomerGroup.recruits,
+            onDestinationSelected: (idx) {
+              setState(() {
+                if (_currentGroup == CanteenCustomerGroup.recruits) {
+                  _recruitsIndex = idx;
+                } else {
+                  _pStaffIndex = idx;
+                }
+              });
+            },
+          ),
           body: SafeArea(
             child: Column(
               children: [
-                // 1. Sleek Compact Command Masthead with transparent BAF emblem
+                // 1. Command Masthead with BAF crest, title, context chip, and settings icon
                 Container(
                   width: double.infinity,
                   padding: EdgeInsets.symmetric(
@@ -399,6 +392,22 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
                           ),
                         ),
                       ),
+                      const SizedBox(width: 6),
+
+                      // Header Settings Icon
+                      IconButton(
+                        icon: const Icon(Icons.settings_outlined, color: AppColors.bafGold, size: 22),
+                        tooltip: 'Settings & Structure',
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -498,70 +507,19 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
                   ),
                 ),
 
-                // 3. Sub-Module Navigation (TabBar)
-                Container(
-                  decoration: const BoxDecoration(
-                    color: AppColors.bafNavy,
-                    border: Border(bottom: BorderSide(color: AppColors.ledgerBorder, width: 1)),
-                  ),
-                  child: _currentGroup == CanteenCustomerGroup.recruits
-                      ? TabBar(
-                          controller: _recruitsTabController,
-                          isScrollable: false,
-                          indicatorColor: AppColors.bafGold,
-                          indicatorWeight: 3.0,
-                          indicatorSize: TabBarIndicatorSize.tab,
-                          labelColor: AppColors.bafGold,
-                          unselectedLabelColor: Colors.white70,
-                          labelPadding: EdgeInsets.zero,
-                          labelStyle: TextStyle(
-                            fontSize: isMobile ? 10 : 11.5,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.3,
-                          ),
-                          tabs: [
-                            Tab(icon: const Icon(Icons.menu_book, size: 15), text: isMobile ? 'REGISTER' : '1. DAILY REGISTER'),
-                            Tab(icon: const Icon(Icons.grid_on, size: 15), text: isMobile ? 'MATRIX' : '2. MONTHLY MATRIX'),
-                            Tab(icon: const Icon(Icons.table_chart, size: 15), text: isMobile ? 'SPREADSHEET' : '3. ROOM SOFT SPREADSHEET'),
-                            Tab(icon: const Icon(Icons.verified, size: 15), text: isMobile ? 'AUDIT' : '4. AUDIT & RECON'),
-                          ],
-                        )
-                      : TabBar(
-                          controller: _pStaffTabController,
-                          isScrollable: false,
-                          indicatorColor: AppColors.bafGold,
-                          indicatorWeight: 3.0,
-                          indicatorSize: TabBarIndicatorSize.tab,
-                          labelColor: AppColors.bafGold,
-                          unselectedLabelColor: Colors.white70,
-                          labelPadding: EdgeInsets.zero,
-                          labelStyle: TextStyle(
-                            fontSize: isMobile ? 10 : 11.5,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.3,
-                          ),
-                          tabs: [
-                            Tab(icon: const Icon(Icons.person, size: 15), text: isMobile ? 'STAFF BOOK' : '1. DAILY REGISTER'),
-                            Tab(icon: const Icon(Icons.grid_on, size: 15), text: isMobile ? 'MATRIX' : '2. MONTHLY MATRIX'),
-                            Tab(icon: const Icon(Icons.picture_as_pdf, size: 15), text: isMobile ? 'STATEMENT' : '3. STAFF STATEMENT (PDF)'),
-                          ],
-                        ),
-                ),
-
-                // 4. Tab Views
+                // 3. Main Views Stack (Clean IndexedStack: Zero horizontal scroll conflict & preserved state)
                 Expanded(
                   child: _currentGroup == CanteenCustomerGroup.recruits
-                      ? TabBarView(
-                          controller: _recruitsTabController,
+                      ? IndexedStack(
+                          index: _recruitsIndex,
                           children: const [
                             DailyEntryView(),
                             MonthlyMatrixView(),
-                            RoomSoftSpreadsheetView(),
                             MonthlyAuditView(),
                           ],
                         )
-                      : TabBarView(
-                          controller: _pStaffTabController,
+                      : IndexedStack(
+                          index: _pStaffIndex,
                           children: const [
                             PStaffDailyEntryView(),
                             PStaffMonthlyMatrixView(),

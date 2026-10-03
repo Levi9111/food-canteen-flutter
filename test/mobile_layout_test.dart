@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:food_canteen/features/recruits_canteen/presentation/canteen_main_screen.dart';
 import 'package:food_canteen/main.dart';
 
 void main() {
@@ -13,7 +14,9 @@ void main() {
 
     await tester.pumpWidget(
       const ProviderScope(
-        child: RtsFoodCanteenApp(),
+        child: RtsFoodCanteenApp(
+          home: CanteenMainScreen(),
+        ),
       ),
     );
 
@@ -30,12 +33,7 @@ void main() {
     expect(find.text('PRE DUE'), findsAtLeast(1));
     expect(find.text('MONTH SPEND'), findsAtLeast(1));
 
-    // 3. Switch to Tab 3: Soft Spreadsheet
-    await tester.tap(find.text('SPREADSHEET'));
-    await tester.pumpAndSettle();
-    expect(find.text('DOWNLOAD PDF'), findsOneWidget);
-
-    // 4. Switch to Tab 4: Audit & Recon
+    // 3. Switch to Tab 3: Audit & Recon
     await tester.tap(find.text('AUDIT'));
     await tester.pumpAndSettle();
     expect(find.textContaining('OFFICIAL AUDIT STATEMENT'), findsAtLeast(1));
@@ -50,7 +48,9 @@ void main() {
 
     await tester.pumpWidget(
       const ProviderScope(
-        child: RtsFoodCanteenApp(),
+        child: RtsFoodCanteenApp(
+          home: CanteenMainScreen(),
+        ),
       ),
     );
 
@@ -60,10 +60,9 @@ void main() {
     expect(find.text('FOOD CANTEEN, RTS'), findsOneWidget);
     expect(find.text('BAF'), findsOneWidget);
 
-    // Verify that TabBar is visible and rendered
+    // Verify that bottom navigation bar is visible and rendered
     expect(find.text('REGISTER'), findsOneWidget);
     expect(find.text('MATRIX'), findsOneWidget);
-    expect(find.text('SPREADSHEET'), findsOneWidget);
     expect(find.text('AUDIT'), findsOneWidget);
 
     // Switch to Matrix
@@ -71,10 +70,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('PRE DUE'), findsAtLeast(1));
 
-    // Switch to Spreadsheet
-    await tester.tap(find.text('SPREADSHEET'));
+    // Switch to Audit
+    await tester.tap(find.text('AUDIT'));
     await tester.pumpAndSettle();
-    expect(find.text('DOWNLOAD PDF'), findsOneWidget);
+    expect(find.textContaining('OFFICIAL AUDIT STATEMENT'), findsAtLeast(1));
   });
 
   testWidgets('App loads cleanly on compact 360 x 740 Android phone screen', (WidgetTester tester) async {
@@ -85,7 +84,9 @@ void main() {
 
     await tester.pumpWidget(
       const ProviderScope(
-        child: RtsFoodCanteenApp(),
+        child: RtsFoodCanteenApp(
+          home: CanteenMainScreen(),
+        ),
       ),
     );
 

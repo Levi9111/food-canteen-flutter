@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:food_canteen/features/recruits_canteen/presentation/canteen_main_screen.dart';
 import 'package:food_canteen/main.dart';
 
 void main() {
-  testWidgets('App loads RTS Food Canteen room register & soft spreadsheet smoke test', (WidgetTester tester) async {
+  testWidgets('App loads RTS Food Canteen room register & bottom nav smoke test', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1400, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -12,16 +13,18 @@ void main() {
 
     await tester.pumpWidget(
       const ProviderScope(
-        child: RtsFoodCanteenApp(),
+        child: RtsFoodCanteenApp(
+          home: CanteenMainScreen(),
+        ),
       ),
     );
 
     await tester.pumpAndSettle();
 
-    // Verify header, tabs, and entry selector
-    expect(find.textContaining('FOOD CANTEEN, RTS'), findsOneWidget);
-    expect(find.textContaining('DAILY REGISTER'), findsOneWidget);
-    expect(find.textContaining('MONTHLY MATRIX'), findsOneWidget);
-    expect(find.textContaining('ROOM SOFT SPREADSHEET'), findsOneWidget);
+    // Verify header, bottom navigation bar items, and entry badge
+    expect(find.textContaining('FOOD CANTEEN, RTS'), findsAtLeast(1));
+    expect(find.text('REGISTER'), findsAtLeast(1));
+    expect(find.text('MATRIX'), findsAtLeast(1));
+    expect(find.text('AUDIT'), findsAtLeast(1));
   });
 }
