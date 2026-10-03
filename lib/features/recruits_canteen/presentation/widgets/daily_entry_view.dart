@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/animations/smooth_transitions.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/modal_action_bar.dart';
 import '../../constants/canteen_constants.dart';
 import '../../models/daily_room_expense.dart';
 import '../../providers/canteen_register_provider.dart';
@@ -698,49 +699,33 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                       const SizedBox(height: 16),
 
                       // Actions
-                      Wrap(
-                        alignment: WrapAlignment.end,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          OutlinedButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: const Text('CANCEL'),
-                          ),
-                          ElevatedButton.icon(
-                            icon: const Icon(Icons.check, size: 16),
-                            label: const Text('SAVE PRICE IN BOOK'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.bafNavy,
-                              foregroundColor: AppColors.bafGold,
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            ),
-                            onPressed: () async {
-                              final amt = double.tryParse(amountController.text.trim()) ?? 0.0;
-                              await ref.read(canteenRegisterProvider.notifier).recordRoomExpense(
-                                room: room,
-                                amount: amt,
-                                representativeName: repController.text.trim().isEmpty
-                                    ? null
-                                    : repController.text.trim(),
-                                itemsDescription: itemsController.text.trim().isEmpty
-                                    ? null
-                                    : itemsController.text.trim(),
-                              );
-                              if (context.mounted) {
-                                Navigator.of(context).pop();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Saved: $room - ৳ ${amt.toStringAsFixed(2)}'),
-                                    backgroundColor: AppColors.cleared,
-                                    duration: const Duration(seconds: 2),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                        ],
+                      ModalActionBar(
+                        cancelLabel: 'CANCEL',
+                        confirmLabel: 'SAVE PRICE IN BOOK',
+                        onCancel: () => Navigator.of(context).pop(),
+                        onConfirm: () async {
+                          final amt = double.tryParse(amountController.text.trim()) ?? 0.0;
+                          await ref.read(canteenRegisterProvider.notifier).recordRoomExpense(
+                            room: room,
+                            amount: amt,
+                            representativeName: repController.text.trim().isEmpty
+                                ? null
+                                : repController.text.trim(),
+                            itemsDescription: itemsController.text.trim().isEmpty
+                                ? null
+                                : itemsController.text.trim(),
+                          );
+                          if (context.mounted) {
+                            Navigator.of(context).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Saved: $room - ৳ ${amt.toStringAsFixed(2)}'),
+                                backgroundColor: AppColors.cleared,
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        },
                       ),
                     ],
                   ),

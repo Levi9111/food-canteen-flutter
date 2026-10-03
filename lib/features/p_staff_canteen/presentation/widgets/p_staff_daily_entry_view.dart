@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/animations/smooth_transitions.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/modal_action_bar.dart';
 import '../../constants/p_staff_constants.dart';
 import '../../models/p_staff_models.dart';
 import '../../providers/p_staff_register_provider.dart';
@@ -137,39 +138,25 @@ class _PStaffDailyEntryViewState extends ConsumerState<PStaffDailyEntryView> {
                           ),
                           const SizedBox(height: 18),
 
-                          Wrap(
-                            alignment: WrapAlignment.end,
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              OutlinedButton(
-                                onPressed: () => Navigator.of(ctx).pop(),
-                                child: const Text('CANCEL'),
-                              ),
-                              ElevatedButton.icon(
-                                icon: const Icon(Icons.check, size: 16),
-                                label: const Text('ENROLL P-STAFF'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.bafNavy,
-                                  foregroundColor: AppColors.bafGold,
-                                ),
-                                onPressed: () {
-                                  final name = nameCtrl.text.trim();
-                                  final bd = bdNoCtrl.text.trim();
-                                  final pre = double.tryParse(preDueCtrl.text.trim()) ?? 0.0;
-                                  if (name.isNotEmpty && bd.isNotEmpty) {
-                                    ref.read(pStaffRegisterProvider.notifier).addNewStaff(
-                                      name: name,
-                                      rank: selectedRank,
-                                      bdNo: bd,
-                                      office: selectedOffice,
-                                      preDue: pre,
-                                    );
-                                    Navigator.of(ctx).pop();
-                                  }
-                                },
-                              ),
-                            ],
+                          ModalActionBar(
+                            cancelLabel: 'CANCEL',
+                            confirmLabel: 'ENROLL P-STAFF',
+                            onCancel: () => Navigator.of(ctx).pop(),
+                            onConfirm: () {
+                              final name = nameCtrl.text.trim();
+                              final bd = bdNoCtrl.text.trim();
+                              final pre = double.tryParse(preDueCtrl.text.trim()) ?? 0.0;
+                              if (name.isNotEmpty && bd.isNotEmpty) {
+                                ref.read(pStaffRegisterProvider.notifier).addNewStaff(
+                                  name: name,
+                                  rank: selectedRank,
+                                  bdNo: bd,
+                                  office: selectedOffice,
+                                  preDue: pre,
+                                );
+                                Navigator.of(ctx).pop();
+                              }
+                            },
                           ),
                         ],
                       ),
@@ -328,47 +315,31 @@ class _PStaffDailyEntryViewState extends ConsumerState<PStaffDailyEntryView> {
 
                       const SizedBox(height: 16),
 
-                      // Actions using Wrap to prevent overflow
-                      Wrap(
-                        alignment: WrapAlignment.end,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          OutlinedButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: const Text('CANCEL'),
-                          ),
-                          ElevatedButton.icon(
-                            icon: const Icon(Icons.check, size: 16),
-                            label: const Text('SAVE PRICE IN BOOK'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.bafNavy,
-                              foregroundColor: AppColors.bafGold,
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            ),
-                            onPressed: () async {
-                              final amt = double.tryParse(amountController.text.trim()) ?? 0.0;
-                              await ref.read(pStaffRegisterProvider.notifier).recordStaffExpense(
-                                staffId: staff.id,
-                                amount: amt,
-                                particulars: itemsController.text.trim().isEmpty
-                                    ? null
-                                    : itemsController.text.trim(),
-                              );
-                              if (context.mounted) {
-                                Navigator.of(context).pop();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Saved: ${staff.name} - ৳ ${amt.toStringAsFixed(2)}'),
-                                    backgroundColor: AppColors.cleared,
-                                    duration: const Duration(seconds: 2),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                        ],
+                      // Actions with matched even-sized buttons
+                      ModalActionBar(
+                        cancelLabel: 'CANCEL',
+                        confirmLabel: 'SAVE PRICE IN BOOK',
+                        onCancel: () => Navigator.of(context).pop(),
+                        onConfirm: () async {
+                          final amt = double.tryParse(amountController.text.trim()) ?? 0.0;
+                          await ref.read(pStaffRegisterProvider.notifier).recordStaffExpense(
+                            staffId: staff.id,
+                            amount: amt,
+                            particulars: itemsController.text.trim().isEmpty
+                                ? null
+                                : itemsController.text.trim(),
+                          );
+                          if (context.mounted) {
+                            Navigator.of(context).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Saved: ${staff.name} - ৳ ${amt.toStringAsFixed(2)}'),
+                                backgroundColor: AppColors.cleared,
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        },
                       ),
                     ],
                   ),

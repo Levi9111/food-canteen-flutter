@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/animations/smooth_transitions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/baf_rts_crest.dart';
+import '../../../../core/widgets/modal_action_bar.dart';
 import '../../audit/presentation/monthly_audit_view.dart';
 import '../../p_staff_canteen/presentation/widgets/p_staff_daily_entry_view.dart';
 import '../../p_staff_canteen/presentation/widgets/p_staff_monthly_matrix_view.dart';
@@ -96,26 +97,17 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen>
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Wrap(
-                      alignment: WrapAlignment.end,
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        OutlinedButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('CANCEL'),
-                        ),
-                        ElevatedButton(
-                          onPressed: () {
-                            final val = controller.text.trim();
-                            if (val.isNotEmpty) {
-                              ref.read(canteenRegisterProvider.notifier).addNewEntry(val);
-                            }
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text('CREATE BATCH'),
-                        ),
-                      ],
+                    ModalActionBar(
+                      cancelLabel: 'CANCEL',
+                      confirmLabel: 'CREATE BATCH',
+                      onCancel: () => Navigator.of(context).pop(),
+                      onConfirm: () {
+                        final val = controller.text.trim();
+                        if (val.isNotEmpty) {
+                          ref.read(canteenRegisterProvider.notifier).addNewEntry(val);
+                        }
+                        Navigator.of(context).pop();
+                      },
                     ),
                   ],
                 ),
