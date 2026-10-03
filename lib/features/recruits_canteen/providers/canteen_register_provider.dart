@@ -199,8 +199,12 @@ final canteenRegisterProvider =
 );
 
 class CanteenRegisterNotifier extends Notifier<CanteenRegisterState> {
+  bool _disposed = false;
+
   @override
   CanteenRegisterState build() {
+    _disposed = false;
+    ref.onDispose(() => _disposed = true);
     final now = DateTime.now();
     final initialState = CanteenRegisterState(
       selectedDate: now,
@@ -215,8 +219,10 @@ class CanteenRegisterNotifier extends Notifier<CanteenRegisterState> {
   }
 
   Future<void> _loadFromPrefs() async {
+    if (_disposed) return;
     try {
       final prefs = await SharedPreferences.getInstance();
+      if (_disposed) return;
       final entriesJson = prefs.getStringList(CanteenConstants.prefsKeyEntries);
       final activeEntry = prefs.getString(CanteenConstants.prefsKeyActiveEntry) ?? CanteenConstants.defaultEntry;
       final activeManager = prefs.getString(CanteenConstants.prefsKeyActiveManager) ?? CanteenConstants.roleNcoic;
@@ -259,6 +265,7 @@ class CanteenRegisterNotifier extends Notifier<CanteenRegisterState> {
         });
       }
 
+      if (_disposed) return;
       state = state.copyWith(
         activeEntry: activeEntry,
         allEntries: entriesJson ?? state.allEntries,
@@ -269,7 +276,9 @@ class CanteenRegisterNotifier extends Notifier<CanteenRegisterState> {
         roomRanks: loadedRanks,
       );
     } catch (_) {
-      state = state.copyWith(expenses: _generateDemoRecords());
+      if (!_disposed) {
+        state = state.copyWith(expenses: _generateDemoRecords());
+      }
     }
   }
 

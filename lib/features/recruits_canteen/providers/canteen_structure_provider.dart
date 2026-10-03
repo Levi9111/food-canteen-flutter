@@ -38,9 +38,12 @@ final canteenStructureProvider =
 class CanteenStructureNotifier extends Notifier<CanteenStructureState> {
   static const String _prefsKeySquadrons = 'rts_canteen_squadrons_v2';
   static const String _prefsKeyRooms = 'rts_canteen_rooms_per_squadron_v2';
+  bool _disposed = false;
 
   @override
   CanteenStructureState build() {
+    _disposed = false;
+    ref.onDispose(() => _disposed = true);
     _loadFromPrefs();
     return _buildInitialState();
   }
@@ -57,8 +60,10 @@ class CanteenStructureNotifier extends Notifier<CanteenStructureState> {
   }
 
   Future<void> _loadFromPrefs() async {
+    if (_disposed) return;
     try {
       final prefs = await SharedPreferences.getInstance();
+      if (_disposed) return;
       final sqns = prefs.getStringList(_prefsKeySquadrons);
       final roomsJson = prefs.getString(_prefsKeyRooms);
 
@@ -80,6 +85,7 @@ class CanteenStructureNotifier extends Notifier<CanteenStructureState> {
         }
       }
 
+      if (_disposed) return;
       state = state.copyWith(
         squadrons: loadedSqns,
         roomsBySquadron: loadedRooms,
