@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/animations/smooth_transitions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/canteen_theme_extension.dart';
+import '../../../../core/widgets/modal_action_bar.dart';
 import '../../../../core/widgets/squadron_dropdown.dart';
 import '../../providers/canteen_register_provider.dart';
 import '../../providers/canteen_structure_provider.dart';
@@ -23,6 +24,7 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
     final state = ref.watch(canteenRegisterProvider);
     final notifier = ref.read(canteenRegisterProvider.notifier);
     final currencyFormat = NumberFormat('#,##0.00', 'en_US');
+    final theme = context.canteenTheme;
 
     final daysInMonth = DateTime(state.selectedYear, state.selectedMonth + 1, 0).day;
     final sqnMonthGrandTotal = state.getSquadronMonthTotal(
@@ -66,30 +68,31 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                 horizontal: isMobile ? 8 : 16,
                 vertical: 6,
               ),
-              decoration: const BoxDecoration(
-                color: AppColors.ledgerSurface,
-                border: Border(bottom: BorderSide(color: AppColors.ledgerBorderLight)),
+              decoration: BoxDecoration(
+                color: theme.surface,
+                border: Border(bottom: BorderSide(color: theme.cardBorderLight)),
               ),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    const Text('PERIOD:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+                    Text('PERIOD:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(color: AppColors.ledgerBorder),
+                        color: theme.cardBackground,
+                        border: Border.all(color: theme.cardBorder),
                       ),
                       child: DropdownButton<int>(
                         value: state.selectedMonth,
+                        dropdownColor: theme.surface,
                         isDense: true,
                         underline: const SizedBox(),
                         items: List.generate(12, (i) => i + 1).map((m) {
                           return DropdownMenuItem(
                             value: m,
-                            child: Text(monthsList[m - 1], style: const TextStyle(fontSize: 11)),
+                            child: Text(monthsList[m - 1], style: TextStyle(fontSize: 11, color: theme.textPrimary)),
                           );
                         }).toList(),
                         onChanged: (val) {
@@ -101,17 +104,18 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(color: AppColors.ledgerBorder),
+                        color: theme.cardBackground,
+                        border: Border.all(color: theme.cardBorder),
                       ),
                       child: DropdownButton<int>(
                         value: state.selectedYear,
+                        dropdownColor: theme.surface,
                         isDense: true,
                         underline: const SizedBox(),
                         items: [2025, 2026, 2027].map((y) {
                           return DropdownMenuItem(
                             value: y,
-                            child: Text('$y', style: const TextStyle(fontSize: 11)),
+                            child: Text('$y', style: TextStyle(fontSize: 11, color: theme.textPrimary)),
                           );
                         }).toList(),
                         onChanged: (val) {
@@ -218,6 +222,7 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
     int daysInMonth,
     NumberFormat currencyFormat,
   ) {
+    final theme = context.canteenTheme;
     final rooms = ref.watch(canteenStructureProvider).getRoomsForSquadron(state.selectedSquadron);
 
     return ListView.builder(
@@ -253,9 +258,9 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
           padding: const EdgeInsets.only(bottom: 7),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardBackground,
               border: Border.all(
-                color: netDue > 0 ? AppColors.bafGold : AppColors.ledgerBorder,
+                color: netDue > 0 ? theme.accentGold : theme.cardBorder,
                 width: netDue > 0 ? 1.5 : 1.0,
               ),
             ),
@@ -282,19 +287,19 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                       const SizedBox(width: 6),
                       Text(
                         room,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w900,
-                          color: AppColors.bafNavy,
+                          color: theme.textPrimary,
                         ),
                       ),
                       const SizedBox(width: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                        color: AppColors.bafLightBlue,
+                        color: theme.tableHighlight,
                         child: Text(
                           rank,
-                          style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: AppColors.bafDeepBlue),
+                          style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: theme.accentGold),
                         ),
                       ),
                       const Spacer(),
@@ -303,10 +308,10 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppColors.bafLightBlue,
-                            border: Border.all(color: AppColors.bafDeepBlue),
+                            color: theme.tableHighlight,
+                            border: Border.all(color: theme.accentGold),
                           ),
-                          child: const Text('EDIT ACCOUNT', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.bafDeepBlue)),
+                          child: Text('EDIT ACCOUNT', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: theme.accentGold)),
                         ),
                       ),
                     ],
@@ -317,14 +322,14 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                   // Calculations Row (Pre Due, Month, Paid, Net Due)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                    color: AppColors.ledgerBackground,
+                    color: theme.surface,
                     child: Row(
                       children: [
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('PRE DUE', style: TextStyle(fontSize: 8, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
+                              Text('PRE DUE', style: TextStyle(fontSize: 8, color: theme.textSecondary, fontWeight: FontWeight.bold)),
                               Text('৳ ${currencyFormat.format(preDue)}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.balanceAlert)),
                             ],
                           ),
@@ -333,8 +338,8 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('THIS MONTH', style: TextStyle(fontSize: 8, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
-                              Text('৳ ${currencyFormat.format(roomTotal)}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.debitRed)),
+                              Text('THIS MONTH', style: TextStyle(fontSize: 8, color: theme.textSecondary, fontWeight: FontWeight.bold)),
+                              Text('৳ ${currencyFormat.format(roomTotal)}', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: theme.debit)),
                             ],
                           ),
                         ),
@@ -342,7 +347,7 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('PAID', style: TextStyle(fontSize: 8, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
+                              Text('PAID', style: TextStyle(fontSize: 8, color: theme.textSecondary, fontWeight: FontWeight.bold)),
                               Text('৳ ${currencyFormat.format(paid)}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.creditGreen)),
                             ],
                           ),
@@ -351,8 +356,8 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('NET DUE', style: TextStyle(fontSize: 8, color: AppColors.bafNavy, fontWeight: FontWeight.bold)),
-                              Text('৳ ${currencyFormat.format(netDue)}', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900, color: AppColors.bafNavy)),
+                              Text('NET DUE', style: TextStyle(fontSize: 8, color: theme.textPrimary, fontWeight: FontWeight.bold)),
+                              Text('৳ ${currencyFormat.format(netDue)}', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900, color: netDue > 0 ? theme.debit : theme.accentGold)),
                             ],
                           ),
                         ),
@@ -661,77 +666,97 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
     double currentPaid,
     String currentRank,
   ) {
+    final theme = context.canteenTheme;
     final preDueCtrl = TextEditingController(text: currentPreDue > 0 ? currentPreDue.toStringAsFixed(2) : '');
     final paidCtrl = TextEditingController(text: currentPaid > 0 ? currentPaid.toStringAsFixed(2) : '');
     final rankCtrl = TextEditingController(text: currentRank);
 
-    showSmoothMilitaryDialog(
+    showModalBottomSheet(
       context: context,
-      child: Dialog(
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-        child: Container(
-          width: 360,
-          decoration: BoxDecoration(
-            color: AppColors.ledgerSurface,
-            border: Border.all(color: AppColors.bafNavy, width: 2),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                color: AppColors.bafNavy,
-                child: Text(
-                  'ACCOUNT SETTINGS • $room',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+        return Padding(
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 420),
+              decoration: BoxDecoration(
+                color: theme.surface,
+                border: Border.all(color: AppColors.bafNavy, width: 2),
               ),
-              Padding(
-                padding: const EdgeInsets.all(16),
+              child: SingleChildScrollView(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text('RANK / DESIGNATION (e.g. Rect Rep, Sgt, WO, Civ):', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    TextField(controller: rankCtrl, decoration: const InputDecoration(isDense: true)),
-                    const SizedBox(height: 12),
-                    const Text('PREVIOUS DUE (TK):', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    TextField(controller: preDueCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(isDense: true, prefixText: '৳ ')),
-                    const SizedBox(height: 12),
-                    const Text('PAID AMOUNT (TK):', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    TextField(controller: paidCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(isDense: true, prefixText: '৳ ')),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        OutlinedButton(onPressed: () => Navigator.of(context).pop(), child: const Text('CANCEL')),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () {
-                            final preVal = double.tryParse(preDueCtrl.text.trim()) ?? 0.0;
-                            final paidVal = double.tryParse(paidCtrl.text.trim()) ?? 0.0;
-                            final rk = rankCtrl.text.trim();
-                            ref.read(canteenRegisterProvider.notifier).updateRoomPreDue(room, preVal);
-                            ref.read(canteenRegisterProvider.notifier).updateRoomPaid(room, paidVal);
-                            if (rk.isNotEmpty) {
-                              ref.read(canteenRegisterProvider.notifier).updateRoomRank(room, rk);
-                            }
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text('SAVE ACCOUNT'),
-                        ),
-                      ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      color: AppColors.bafNavy,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.account_balance_wallet, color: AppColors.bafGold, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'ACCOUNT SETTINGS • $room',
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                            onPressed: () => Navigator.of(ctx).pop(),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('RANK / DESIGNATION (e.g. Rect Rep, Sgt, WO, Civ):', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
+                          const SizedBox(height: 4),
+                          TextField(controller: rankCtrl, decoration: const InputDecoration(isDense: true)),
+                          const SizedBox(height: 12),
+                          Text('PREVIOUS DUE (TK):', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
+                          const SizedBox(height: 4),
+                          TextField(controller: preDueCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(isDense: true, prefixText: '৳ ')),
+                          const SizedBox(height: 12),
+                          Text('PAID AMOUNT (TK):', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
+                          const SizedBox(height: 4),
+                          TextField(controller: paidCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(isDense: true, prefixText: '৳ ')),
+                          const SizedBox(height: 16),
+                          ModalActionBar(
+                            cancelLabel: 'CANCEL',
+                            confirmLabel: 'SAVE ACCOUNT',
+                            onCancel: () => Navigator.of(ctx).pop(),
+                            onConfirm: () {
+                              final preVal = double.tryParse(preDueCtrl.text.trim()) ?? 0.0;
+                              final paidVal = double.tryParse(paidCtrl.text.trim()) ?? 0.0;
+                              final rk = rankCtrl.text.trim();
+                              ref.read(canteenRegisterProvider.notifier).updateRoomPreDue(room, preVal);
+                              ref.read(canteenRegisterProvider.notifier).updateRoomPaid(room, paidVal);
+                              if (rk.isNotEmpty) {
+                                ref.read(canteenRegisterProvider.notifier).updateRoomRank(room, rk);
+                              }
+                              Navigator.of(ctx).pop();
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -742,80 +767,97 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
     DateTime date,
     double currentVal,
   ) {
+    final theme = context.canteenTheme;
     final controller = TextEditingController(
       text: currentVal > 0 ? currentVal.toStringAsFixed(2) : '',
     );
-
     final dStr = DateFormat('dd MMM yyyy').format(date);
 
-    showSmoothMilitaryDialog(
+    showModalBottomSheet(
       context: context,
-      child: Dialog(
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-        child: Container(
-          width: 320,
-          decoration: BoxDecoration(
-            color: AppColors.ledgerSurface,
-            border: Border.all(color: AppColors.bafNavy, width: 2),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                color: AppColors.bafNavy,
-                child: Text(
-                  'QUICK ENTRY • $room ($dStr)',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+        return Padding(
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 380),
+              decoration: BoxDecoration(
+                color: theme.surface,
+                border: Border.all(color: AppColors.bafNavy, width: 2),
               ),
-              Padding(
-                padding: const EdgeInsets.all(16),
+              child: SingleChildScrollView(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text('PRICE VALUE (TK):', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: controller,
-                      keyboardType: TextInputType.number,
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        prefixText: '৳ ',
-                        hintText: '0.00',
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      color: AppColors.bafNavy,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.edit_note, color: AppColors.bafGold, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'QUICK ENTRY • $room ($dStr)',
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                            onPressed: () => Navigator.of(ctx).pop(),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        OutlinedButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('CANCEL'),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () {
-                            final val = double.tryParse(controller.text.trim()) ?? 0.0;
-                            ref.read(canteenRegisterProvider.notifier).recordRoomExpense(
-                              room: room,
-                              amount: val,
-                              date: date,
-                            );
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text('SAVE PRICE'),
-                        ),
-                      ],
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('PRICE VALUE (TK):', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textSecondary)),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: controller,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            autofocus: true,
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.debit),
+                            decoration: const InputDecoration(
+                              prefixText: '৳ ',
+                              hintText: '0.00',
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ModalActionBar(
+                            cancelLabel: 'CANCEL',
+                            confirmLabel: 'SAVE PRICE',
+                            onCancel: () => Navigator.of(ctx).pop(),
+                            onConfirm: () {
+                              final val = double.tryParse(controller.text.trim()) ?? 0.0;
+                              ref.read(canteenRegisterProvider.notifier).recordRoomExpense(
+                                room: room,
+                                amount: val,
+                                date: date,
+                              );
+                              Navigator.of(ctx).pop();
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

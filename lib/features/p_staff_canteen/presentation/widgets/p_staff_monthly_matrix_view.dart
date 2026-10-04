@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/animations/smooth_transitions.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/canteen_theme_extension.dart';
+import '../../../../core/widgets/modal_action_bar.dart';
 import '../../constants/p_staff_constants.dart';
 import '../../models/p_staff_models.dart';
 import '../../providers/p_staff_register_provider.dart';
@@ -18,6 +19,7 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
   bool _forceMatrixTable = false;
 
   void _showStaffAccountEditModal(BuildContext context, WidgetRef ref, PStaffProfile staff) {
+    final theme = context.canteenTheme;
     final nameCtrl = TextEditingController(text: staff.name);
     final bdNoCtrl = TextEditingController(text: staff.bdNo);
     final preDueCtrl = TextEditingController(text: staff.preDue > 0 ? staff.preDue.toStringAsFixed(2) : '');
@@ -25,93 +27,112 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
     String selectedRank = staff.rank;
     String selectedOffice = staff.office;
 
-    showSmoothMilitaryDialog(
+    showModalBottomSheet(
       context: context,
-      child: StatefulBuilder(
-        builder: (ctx, setDialogState) {
-          return Dialog(
-            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 400),
-              decoration: BoxDecoration(
-                color: AppColors.ledgerSurface,
-                border: Border.all(color: AppColors.bafNavy, width: 2),
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      color: AppColors.bafNavy,
-                      child: Text(
-                        'P-STAFF ACCOUNT • ${staff.bdNo}',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('FULL NAME:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 4),
-                          TextField(controller: nameCtrl, decoration: const InputDecoration(isDense: true)),
-                          const SizedBox(height: 10),
-
-                          const Text('RANK:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.ledgerBorder)),
-                            child: DropdownButton<String>(
-                              value: PStaffConstants.ranks.contains(selectedRank) ? selectedRank : PStaffConstants.ranks.first,
-                              isExpanded: true,
-                              underline: const SizedBox(),
-                              items: PStaffConstants.ranks.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
-                              onChanged: (val) {
-                                if (val != null) setDialogState(() => selectedRank = val);
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-
-                          const Text('ASSIGNED OFFICE:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.ledgerBorder)),
-                            child: DropdownButton<String>(
-                              value: PStaffConstants.selectableOffices.contains(selectedOffice) ? selectedOffice : PStaffConstants.selectableOffices.first,
-                              isExpanded: true,
-                              underline: const SizedBox(),
-                              items: PStaffConstants.selectableOffices.map((o) => DropdownMenuItem(value: o, child: Text(o))).toList(),
-                              onChanged: (val) {
-                                if (val != null) setDialogState(() => selectedOffice = val);
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-
-                          const Text('PREVIOUS DUE (TK):', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 4),
-                          TextField(controller: preDueCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(isDense: true, prefixText: '৳ ')),
-                          const SizedBox(height: 10),
-
-                          const Text('PAID AMOUNT (TK):', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 4),
-                          TextField(controller: paidCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(isDense: true, prefixText: '৳ ')),
-                          const SizedBox(height: 16),
-
-                          Wrap(
-                            alignment: WrapAlignment.end,
-                            spacing: 8,
-                            runSpacing: 8,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return Padding(
+              padding: EdgeInsets.only(bottom: bottomInset),
+              child: Center(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 440),
+                  decoration: BoxDecoration(
+                    color: theme.surface,
+                    border: Border.all(color: AppColors.bafNavy, width: 2),
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          color: AppColors.bafNavy,
+                          child: Row(
                             children: [
-                              OutlinedButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('CANCEL')),
-                              ElevatedButton(
-                                onPressed: () {
+                              const Icon(Icons.account_balance_wallet, color: AppColors.bafGold, size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'P-STAFF ACCOUNT • ${staff.bdNo}',
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                                visualDensity: VisualDensity.compact,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                onPressed: () => Navigator.of(ctx).pop(),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('FULL NAME:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
+                              const SizedBox(height: 4),
+                              TextField(controller: nameCtrl, decoration: const InputDecoration(isDense: true)),
+                              const SizedBox(height: 10),
+
+                              Text('RANK:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(color: theme.cardBackground, border: Border.all(color: theme.cardBorder)),
+                                child: DropdownButton<String>(
+                                  value: PStaffConstants.ranks.contains(selectedRank) ? selectedRank : PStaffConstants.ranks.first,
+                                  dropdownColor: theme.surface,
+                                  isExpanded: true,
+                                  underline: const SizedBox(),
+                                  items: PStaffConstants.ranks.map((r) => DropdownMenuItem(value: r, child: Text(r, style: TextStyle(color: theme.textPrimary)))).toList(),
+                                  onChanged: (val) {
+                                    if (val != null) setDialogState(() => selectedRank = val);
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+
+                              Text('ASSIGNED OFFICE:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(color: theme.cardBackground, border: Border.all(color: theme.cardBorder)),
+                                child: DropdownButton<String>(
+                                  value: PStaffConstants.selectableOffices.contains(selectedOffice) ? selectedOffice : PStaffConstants.selectableOffices.first,
+                                  dropdownColor: theme.surface,
+                                  isExpanded: true,
+                                  underline: const SizedBox(),
+                                  items: PStaffConstants.selectableOffices.map((o) => DropdownMenuItem(value: o, child: Text(o, style: TextStyle(color: theme.textPrimary)))).toList(),
+                                  onChanged: (val) {
+                                    if (val != null) setDialogState(() => selectedOffice = val);
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+
+                              Text('PREVIOUS DUE (TK):', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
+                              const SizedBox(height: 4),
+                              TextField(controller: preDueCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(isDense: true, prefixText: '৳ ')),
+                              const SizedBox(height: 10),
+
+                              Text('PAID AMOUNT (TK):', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
+                              const SizedBox(height: 4),
+                              TextField(controller: paidCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(isDense: true, prefixText: '৳ ')),
+                              const SizedBox(height: 16),
+
+                              ModalActionBar(
+                                cancelLabel: 'CANCEL',
+                                confirmLabel: 'SAVE ACCOUNT',
+                                onCancel: () => Navigator.of(ctx).pop(),
+                                onConfirm: () {
                                   final pre = double.tryParse(preDueCtrl.text.trim()) ?? 0.0;
                                   final pd = double.tryParse(paidCtrl.text.trim()) ?? 0.0;
                                   ref.read(pStaffRegisterProvider.notifier).updateStaff(
@@ -125,20 +146,19 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
                                   );
                                   Navigator.of(ctx).pop();
                                 },
-                                child: const Text('SAVE ACCOUNT'),
                               ),
                             ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          );
-        },
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -149,76 +169,96 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
     DateTime date,
     double currentVal,
   ) {
+    final theme = context.canteenTheme;
     final controller = TextEditingController(
       text: currentVal > 0 ? currentVal.toStringAsFixed(2) : '',
     );
     final dStr = DateFormat('dd MMM yyyy').format(date);
 
-    showSmoothMilitaryDialog(
+    showModalBottomSheet(
       context: context,
-      child: Dialog(
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-        child: Container(
-          width: 320,
-          decoration: BoxDecoration(
-            color: AppColors.ledgerSurface,
-            border: Border.all(color: AppColors.bafNavy, width: 2),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                color: AppColors.bafNavy,
-                child: Text(
-                  'QUICK ENTRY • ${staff.bdNo} ($dStr)',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+        return Padding(
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 380),
+              decoration: BoxDecoration(
+                color: theme.surface,
+                border: Border.all(color: AppColors.bafNavy, width: 2),
               ),
-              Padding(
-                padding: const EdgeInsets.all(16),
+              child: SingleChildScrollView(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text('${staff.rank} ${staff.name}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    const Text('PRICE VALUE (TK):', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: controller,
-                      keyboardType: TextInputType.number,
-                      autofocus: true,
-                      decoration: const InputDecoration(prefixText: '৳ ', hintText: '0.00', isDense: true),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      color: AppColors.bafNavy,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.edit_note, color: AppColors.bafGold, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'QUICK ENTRY • ${staff.bdNo} ($dStr)',
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                            onPressed: () => Navigator.of(ctx).pop(),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      alignment: WrapAlignment.end,
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        OutlinedButton(onPressed: () => Navigator.of(context).pop(), child: const Text('CANCEL')),
-                        ElevatedButton(
-                          onPressed: () {
-                            final val = double.tryParse(controller.text.trim()) ?? 0.0;
-                            ref.read(pStaffRegisterProvider.notifier).recordStaffExpense(
-                              staffId: staff.id,
-                              amount: val,
-                              date: date,
-                            );
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text('SAVE PRICE'),
-                        ),
-                      ],
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('${staff.rank} ${staff.name}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: theme.textPrimary)),
+                          const SizedBox(height: 8),
+                          Text('PRICE VALUE (TK):', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textSecondary)),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: controller,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            autofocus: true,
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.debit),
+                            decoration: const InputDecoration(prefixText: '৳ ', hintText: '0.00', isDense: true),
+                          ),
+                          const SizedBox(height: 16),
+                          ModalActionBar(
+                            cancelLabel: 'CANCEL',
+                            confirmLabel: 'SAVE PRICE',
+                            onCancel: () => Navigator.of(ctx).pop(),
+                            onConfirm: () {
+                              final val = double.tryParse(controller.text.trim()) ?? 0.0;
+                              ref.read(pStaffRegisterProvider.notifier).recordStaffExpense(
+                                staffId: staff.id,
+                                amount: val,
+                                date: date,
+                              );
+                              Navigator.of(ctx).pop();
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
