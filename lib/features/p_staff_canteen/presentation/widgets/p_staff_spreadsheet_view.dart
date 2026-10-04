@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/canteen_theme_extension.dart';
 import '../../../../core/widgets/baf_rts_crest.dart';
 import '../../models/p_staff_models.dart';
 import '../../providers/p_staff_register_provider.dart';
@@ -147,6 +148,8 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
       state.selectedMonth,
     );
 
+    final theme = context.canteenTheme;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final screenWidth = constraints.maxWidth;
@@ -158,27 +161,29 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
             // Top Toolbar: Select Staff, Month, Year & Download
             Container(
               padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 14, vertical: 6),
-              decoration: const BoxDecoration(
-                color: AppColors.ledgerSurface,
-                border: Border(bottom: BorderSide(color: AppColors.ledgerBorderLight)),
+              decoration: BoxDecoration(
+                color: theme.cardBackground,
+                border: Border(bottom: BorderSide(color: theme.cardBorderLight)),
               ),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    const Text('STAFF:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+                    Text('STAFF:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
                     const SizedBox(width: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.ledgerBorder)),
+                      decoration: BoxDecoration(color: theme.surface, border: Border.all(color: theme.cardBorder)),
                       child: DropdownButton<String>(
                         value: currentStaff.id,
                         isDense: true,
                         underline: const SizedBox(),
+                        dropdownColor: theme.cardBackground,
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: theme.textPrimary),
                         items: state.staffProfiles.map((s) {
                           return DropdownMenuItem(
                             value: s.id,
-                            child: Text('${s.rank} ${s.name} (${s.bdNo})', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            child: Text('${s.rank} ${s.name} (${s.bdNo})', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: theme.textPrimary)),
                           );
                         }).toList(),
                         onChanged: (val) {
@@ -191,13 +196,15 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
 
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.ledgerBorder)),
+                      decoration: BoxDecoration(color: theme.surface, border: Border.all(color: theme.cardBorder)),
                       child: DropdownButton<int>(
                         value: state.selectedMonth,
                         isDense: true,
                         underline: const SizedBox(),
+                        dropdownColor: theme.cardBackground,
+                        style: TextStyle(fontSize: 11, color: theme.textPrimary),
                         items: List.generate(12, (i) => i + 1).map((m) {
-                          return DropdownMenuItem(value: m, child: Text(monthsList[m - 1], style: const TextStyle(fontSize: 11)));
+                          return DropdownMenuItem(value: m, child: Text(monthsList[m - 1], style: TextStyle(fontSize: 11, color: theme.textPrimary)));
                         }).toList(),
                         onChanged: (val) {
                           if (val != null) notifier.setSelectedMonth(state.selectedYear, val);
@@ -227,7 +234,8 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
                       icon: const Icon(Icons.share, size: 13),
                       label: const Text('SHARE'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.bafNavy,
+                        foregroundColor: theme.accentGold,
+                        side: BorderSide(color: theme.accentGold),
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                         textStyle: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold),
                       ),
@@ -264,13 +272,12 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(horizontal: isMobile ? 6 : 16, vertical: isMobile ? 8 : 12),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
+                child: Center(
                   child: Container(
-                    constraints: BoxConstraints(minWidth: isMobile ? 700 : 840, maxWidth: 940),
+                    constraints: const BoxConstraints(maxWidth: 940),
                     decoration: BoxDecoration(
-                      color: AppColors.ledgerSurface,
-                      border: Border.all(color: AppColors.bafNavy, width: 1.5),
+                      color: theme.cardBackground,
+                      border: Border.all(color: theme.accentGold, width: 1.5),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -310,149 +317,189 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
                         // Metadata Strip
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          color: AppColors.bafLightBlue,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          color: theme.surface,
+                          child: Wrap(
+                            spacing: 12,
+                            runSpacing: 4,
+                            alignment: WrapAlignment.spaceBetween,
                             children: [
-                              _buildMetaItem('STAFF NAME', '${currentStaff.rank} ${currentStaff.name}'),
-                              _buildMetaItem('BD NUMBER', currentStaff.bdNo),
-                              _buildMetaItem('OFFICE / SECTION', currentStaff.office),
-                              _buildMetaItem('PERIOD', '${monthsList[state.selectedMonth - 1].toUpperCase()} ${state.selectedYear}'),
-                              _buildMetaItem('VISITS', '${summary.activeDaysCount} Days'),
+                              _buildMetaItem('STAFF NAME', '${currentStaff.rank} ${currentStaff.name}', theme: theme),
+                              _buildMetaItem('BD NUMBER', currentStaff.bdNo, theme: theme),
+                              _buildMetaItem('OFFICE / SECTION', currentStaff.office, theme: theme),
+                              _buildMetaItem('PERIOD', '${monthsList[state.selectedMonth - 1].toUpperCase()} ${state.selectedYear}', theme: theme),
+                              _buildMetaItem('VISITS', '${summary.activeDaysCount} Days', theme: theme),
                             ],
                           ),
                         ),
 
-                        // Table
-                        Table(
-                          border: TableBorder.all(color: AppColors.ledgerBorder, width: 0.8),
-                          columnWidths: const {
-                            0: FixedColumnWidth(48),
-                            1: FixedColumnWidth(95),
-                            2: FixedColumnWidth(85),
-                            3: FlexColumnWidth(2.5),
-                            4: FixedColumnWidth(95),
-                            5: FixedColumnWidth(65),
-                            6: FixedColumnWidth(95),
-                          },
-                          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                          children: [
-                            TableRow(
-                              decoration: const BoxDecoration(color: AppColors.bafNavy),
+                        // Table - Wrapped in horizontal scroll for mobile
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: SizedBox(
+                            width: isMobile ? 680 : null,
+                            child: Table(
+                              border: TableBorder.all(color: theme.cardBorder, width: 0.8),
+                              columnWidths: const {
+                                0: FixedColumnWidth(48),
+                                1: FixedColumnWidth(95),
+                                2: FixedColumnWidth(85),
+                                3: FlexColumnWidth(2.5),
+                                4: FixedColumnWidth(95),
+                                5: FixedColumnWidth(65),
+                                6: FixedColumnWidth(95),
+                              },
+                              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                               children: [
-                                _buildCell('DAY', isHeader: true, align: TextAlign.center),
-                                _buildCell('DATE', isHeader: true),
-                                _buildCell('WEEKDAY', isHeader: true),
-                                _buildCell('ITEMS CONSUMED / PARTICULARS', isHeader: true),
-                                _buildCell('PRICE (TK)', isHeader: true, align: TextAlign.right),
-                                _buildCell('DUTY', isHeader: true, align: TextAlign.center),
-                                _buildCell('STAFF SIGN', isHeader: true, align: TextAlign.center),
-                              ],
-                            ),
-                            ...summary.days.map((record) {
-                              final isEven = record.dayNumber % 2 == 0;
-                              final hasSpending = record.amount > 0;
-                              return TableRow(
-                                decoration: BoxDecoration(
-                                  color: hasSpending
-                                      ? (isEven ? AppColors.bafLightBlue.withAlpha(90) : AppColors.bafLightBlue.withAlpha(50))
-                                      : (isEven ? AppColors.ledgerSurface : AppColors.ledgerStripe),
+                                TableRow(
+                                  decoration: const BoxDecoration(color: AppColors.bafNavy),
+                                  children: [
+                                    _buildCell('DAY', isHeader: true, align: TextAlign.center, theme: theme),
+                                    _buildCell('DATE', isHeader: true, theme: theme),
+                                    _buildCell('WEEKDAY', isHeader: true, theme: theme),
+                                    _buildCell('ITEMS CONSUMED / PARTICULARS', isHeader: true, theme: theme),
+                                    _buildCell('PRICE (TK)', isHeader: true, align: TextAlign.right, theme: theme),
+                                    _buildCell('DUTY', isHeader: true, align: TextAlign.center, theme: theme),
+                                    _buildCell('STAFF SIGN', isHeader: true, align: TextAlign.center, theme: theme),
+                                  ],
                                 ),
-                                children: [
-                                  _buildCell(record.dayNumber.toString().padLeft(2, '0'), align: TextAlign.center, isBold: true, color: hasSpending ? AppColors.bafNavy : AppColors.textMuted),
-                                  _buildCell(dateDisplayFormat.format(record.date)),
-                                  _buildCell(dayNameFormat.format(record.date), color: (record.date.weekday == DateTime.friday) ? AppColors.debitRed : AppColors.textPrimary),
-                                  _buildCell(record.particulars ?? (hasSpending ? 'Tea & canteen refreshments' : '—'), color: hasSpending ? AppColors.textPrimary : AppColors.textMuted),
-                                  _buildCell(hasSpending ? '৳ ${currencyFormat.format(record.amount)}' : '—', align: TextAlign.right, isBold: hasSpending, color: hasSpending ? AppColors.debitRed : AppColors.textMuted),
-                                  _buildCell(hasSpending ? record.recordedBy : '—', align: TextAlign.center, color: hasSpending ? AppColors.bafNavy : AppColors.textMuted),
-                                  _buildCell(hasSpending ? 'Verified' : '—', align: TextAlign.center, color: hasSpending ? AppColors.creditGreen : AppColors.textMuted),
-                                ],
-                              );
-                            }),
+                                ...summary.days.map((record) {
+                                  final isEven = record.dayNumber % 2 == 0;
+                                  final hasSpending = record.amount > 0;
+                                  return TableRow(
+                                    decoration: BoxDecoration(
+                                      color: hasSpending
+                                          ? theme.tableHighlight
+                                          : (isEven ? theme.cardBackground : theme.stripe),
+                                    ),
+                                    children: [
+                                      _buildCell(
+                                        record.dayNumber.toString().padLeft(2, '0'),
+                                        align: TextAlign.center,
+                                        isBold: true,
+                                        color: hasSpending ? AppColors.bafGold : theme.textSecondary,
+                                        theme: theme,
+                                      ),
+                                      _buildCell(dateDisplayFormat.format(record.date), theme: theme),
+                                      _buildCell(
+                                        dayNameFormat.format(record.date),
+                                        color: (record.date.weekday == DateTime.friday) ? theme.debit : theme.textPrimary,
+                                        theme: theme,
+                                      ),
+                                      _buildCell(
+                                        record.particulars ?? (hasSpending ? 'Tea & canteen refreshments' : '—'),
+                                        color: hasSpending ? theme.textPrimary : theme.textSecondary,
+                                        theme: theme,
+                                      ),
+                                      _buildCell(
+                                        hasSpending ? '৳ ${currencyFormat.format(record.amount)}' : '—',
+                                        align: TextAlign.right,
+                                        isBold: hasSpending,
+                                        color: hasSpending ? theme.debit : theme.textSecondary,
+                                        theme: theme,
+                                      ),
+                                      _buildCell(
+                                        hasSpending ? record.recordedBy : '—',
+                                        align: TextAlign.center,
+                                        color: hasSpending ? theme.textPrimary : theme.textSecondary,
+                                        theme: theme,
+                                      ),
+                                      _buildCell(
+                                        hasSpending ? 'Verified' : '—',
+                                        align: TextAlign.center,
+                                        color: hasSpending ? theme.credit : theme.textSecondary,
+                                        theme: theme,
+                                      ),
+                                    ],
+                                  );
+                                }),
 
-                            // Subtotal 1
-                            TableRow(
-                              decoration: const BoxDecoration(color: AppColors.bafNavy),
-                              children: [
-                                _buildCell('', isHeader: true),
-                                _buildCell('1. MONTH TOTAL', isHeader: true, isBold: true),
-                                _buildCell('', isHeader: true),
-                                _buildCell('CURRENT MONTH SPENDING', isHeader: true, isBold: true),
-                                _buildCell('৳ ${currencyFormat.format(summary.totalMonthlySpending)}', isHeader: true, align: TextAlign.right, isBold: true, color: AppColors.bafGold),
-                                _buildCell('LOGGED', isHeader: true, align: TextAlign.center),
-                                _buildCell('AUDITED', isHeader: true, align: TextAlign.center),
+                                // Subtotal 1
+                                TableRow(
+                                  decoration: const BoxDecoration(color: AppColors.bafNavy),
+                                  children: [
+                                    _buildCell('', isHeader: true, theme: theme),
+                                    _buildCell('1. MONTH TOTAL', isHeader: true, isBold: true, theme: theme),
+                                    _buildCell('', isHeader: true, theme: theme),
+                                    _buildCell('CURRENT MONTH SPENDING', isHeader: true, isBold: true, theme: theme),
+                                    _buildCell('৳ ${currencyFormat.format(summary.totalMonthlySpending)}', isHeader: true, align: TextAlign.right, isBold: true, color: AppColors.bafGold, theme: theme),
+                                    _buildCell('LOGGED', isHeader: true, align: TextAlign.center, theme: theme),
+                                    _buildCell('AUDITED', isHeader: true, align: TextAlign.center, theme: theme),
+                                  ],
+                                ),
+
+                                // Subtotal 2: Pre Due
+                                TableRow(
+                                  decoration: BoxDecoration(color: theme.surface),
+                                  children: [
+                                    _buildCell('', isBold: true, theme: theme),
+                                    _buildCell('2. PREVIOUS DUE', isBold: true, color: AppColors.balanceAlert, theme: theme),
+                                    _buildCell('', theme: theme),
+                                    _buildCell('ARREARS BROUGHT FORWARD', isBold: true, color: theme.textSecondary, theme: theme),
+                                    _buildCell('৳ ${currencyFormat.format(summary.preDue)}', align: TextAlign.right, isBold: true, color: AppColors.balanceAlert, theme: theme),
+                                    _buildCell('BROUGHT FWD', align: TextAlign.center, theme: theme),
+                                    _buildCell('CONFIRMED', align: TextAlign.center, theme: theme),
+                                  ],
+                                ),
+
+                                // Subtotal 3: Grand Total
+                                TableRow(
+                                  decoration: const BoxDecoration(color: AppColors.bafNavy),
+                                  children: [
+                                    _buildCell('', isHeader: true, theme: theme),
+                                    _buildCell('3. GRAND TOTAL', isHeader: true, isBold: true, theme: theme),
+                                    _buildCell('', isHeader: true, theme: theme),
+                                    _buildCell('GROSS LIABILITY (PRE DUE + MONTH)', isHeader: true, isBold: true, theme: theme),
+                                    _buildCell('৳ ${currencyFormat.format(summary.grandTotal)}', isHeader: true, align: TextAlign.right, isBold: true, color: AppColors.bafGold, theme: theme),
+                                    _buildCell('VERIFIED', isHeader: true, align: TextAlign.center, theme: theme),
+                                    _buildCell('VERIFIED', isHeader: true, align: TextAlign.center, theme: theme),
+                                  ],
+                                ),
+
+                                // Subtotal 4: Less Paid
+                                TableRow(
+                                  decoration: BoxDecoration(color: theme.credit.withAlpha(25)),
+                                  children: [
+                                    _buildCell('', theme: theme),
+                                    _buildCell('4. LESS: PAID', isBold: true, color: theme.credit, theme: theme),
+                                    _buildCell('', theme: theme),
+                                    _buildCell('CASH RECEIVED FROM STAFF', isBold: true, color: theme.credit, theme: theme),
+                                    _buildCell('৳ ${currencyFormat.format(summary.paid)}', align: TextAlign.right, isBold: true, color: theme.credit, theme: theme),
+                                    _buildCell('COLLECTED', align: TextAlign.center, theme: theme),
+                                    _buildCell('RECEIPTED', align: TextAlign.center, theme: theme),
+                                  ],
+                                ),
+
+                                // Subtotal 5: Net Due
+                                TableRow(
+                                  decoration: const BoxDecoration(color: AppColors.bafNavy),
+                                  children: [
+                                    _buildCell('', isHeader: true, theme: theme),
+                                    _buildCell('5. NET CLOSING DUE', isHeader: true, isBold: true, theme: theme),
+                                    _buildCell('', isHeader: true, theme: theme),
+                                    _buildCell('OUTSTANDING BALANCE AT MONTH END', isHeader: true, isBold: true, theme: theme),
+                                    _buildCell('৳ ${currencyFormat.format(summary.netDue)}', isHeader: true, align: TextAlign.right, isBold: true, color: summary.netDue > 0 ? Colors.amberAccent : Colors.greenAccent, theme: theme),
+                                    _buildCell('FINAL', isHeader: true, align: TextAlign.center, theme: theme),
+                                    _buildCell(summary.netDue <= 0 ? 'CLEARED' : 'PENDING', isHeader: true, align: TextAlign.center, theme: theme),
+                                  ],
+                                ),
                               ],
                             ),
-
-                            // Subtotal 2: Pre Due
-                            TableRow(
-                              decoration: BoxDecoration(color: AppColors.bafLightBlue.withAlpha(120)),
-                              children: [
-                                _buildCell('', isBold: true),
-                                _buildCell('2. PREVIOUS DUE', isBold: true, color: AppColors.balanceAlert),
-                                _buildCell(''),
-                                _buildCell('ARREARS BROUGHT FORWARD', isBold: true, color: AppColors.textSecondary),
-                                _buildCell('৳ ${currencyFormat.format(summary.preDue)}', align: TextAlign.right, isBold: true, color: AppColors.balanceAlert),
-                                _buildCell('BROUGHT FWD', align: TextAlign.center),
-                                _buildCell('CONFIRMED', align: TextAlign.center),
-                              ],
-                            ),
-
-                            // Subtotal 3: Grand Total
-                            TableRow(
-                              decoration: const BoxDecoration(color: AppColors.bafNavy),
-                              children: [
-                                _buildCell('', isHeader: true),
-                                _buildCell('3. GRAND TOTAL', isHeader: true, isBold: true),
-                                _buildCell('', isHeader: true),
-                                _buildCell('GROSS LIABILITY (PRE DUE + MONTH)', isHeader: true, isBold: true),
-                                _buildCell('৳ ${currencyFormat.format(summary.grandTotal)}', isHeader: true, align: TextAlign.right, isBold: true, color: AppColors.bafGold),
-                                _buildCell('VERIFIED', isHeader: true, align: TextAlign.center),
-                                _buildCell('VERIFIED', isHeader: true, align: TextAlign.center),
-                              ],
-                            ),
-
-                            // Subtotal 4: Less Paid
-                            TableRow(
-                              decoration: BoxDecoration(color: AppColors.creditGreen.withAlpha(20)),
-                              children: [
-                                _buildCell(''),
-                                _buildCell('4. LESS: PAID', isBold: true, color: AppColors.creditGreen),
-                                _buildCell(''),
-                                _buildCell('CASH RECEIVED FROM STAFF', isBold: true, color: AppColors.creditGreen),
-                                _buildCell('৳ ${currencyFormat.format(summary.paid)}', align: TextAlign.right, isBold: true, color: AppColors.creditGreen),
-                                _buildCell('COLLECTED', align: TextAlign.center),
-                                _buildCell('RECEIPTED', align: TextAlign.center),
-                              ],
-                            ),
-
-                            // Subtotal 5: Net Due
-                            TableRow(
-                              decoration: const BoxDecoration(color: AppColors.bafNavy),
-                              children: [
-                                _buildCell('', isHeader: true),
-                                _buildCell('5. NET CLOSING DUE', isHeader: true, isBold: true),
-                                _buildCell('', isHeader: true),
-                                _buildCell('OUTSTANDING BALANCE AT MONTH END', isHeader: true, isBold: true),
-                                _buildCell('৳ ${currencyFormat.format(summary.netDue)}', isHeader: true, align: TextAlign.right, isBold: true, color: summary.netDue > 0 ? Colors.amberAccent : Colors.greenAccent),
-                                _buildCell('FINAL', isHeader: true, align: TextAlign.center),
-                                _buildCell(summary.netDue <= 0 ? 'CLEARED' : 'PENDING', isHeader: true, align: TextAlign.center),
-                              ],
-                            ),
-                          ],
+                          ),
                         ),
 
                         // Signature Blocks
                         Container(
                           padding: const EdgeInsets.all(16),
-                          color: AppColors.ledgerSurface,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          color: theme.cardBackground,
+                          child: Wrap(
+                            spacing: 16,
+                            runSpacing: 16,
+                            alignment: WrapAlignment.spaceAround,
                             children: [
-                              _buildSignatureColumn('INDIVIDUAL P-STAFF', currentStaff.rank, currentStaff.bdNo),
-                              _buildSignatureColumn('NCOIC (CANTEEN)', 'Sergeant (Sgt)', 'RTS BAF'),
-                              _buildSignatureColumn('JCOIC (CANTEEN)', 'Warrant Officer (WO)', 'RTS BAF'),
-                              _buildSignatureColumn('COUNTERSIGNED (OC)', 'Officer Commanding', 'RTS (BAF)'),
+                              _buildSignatureColumn('INDIVIDUAL P-STAFF', currentStaff.rank, currentStaff.bdNo, theme: theme),
+                              _buildSignatureColumn('NCOIC (CANTEEN)', 'Sergeant (Sgt)', 'RTS BAF', theme: theme),
+                              _buildSignatureColumn('JCOIC (CANTEEN)', 'Warrant Officer (WO)', 'RTS BAF', theme: theme),
+                              _buildSignatureColumn('COUNTERSIGNED (OC)', 'Officer Commanding', 'RTS (BAF)', theme: theme),
                             ],
                           ),
                         ),
@@ -479,13 +526,13 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
     );
   }
 
-  Widget _buildMetaItem(String title, String value) {
+  Widget _buildMetaItem(String title, String value, {required CanteenThemeColors theme}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(title, style: const TextStyle(fontSize: 8, color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
-        Text(value, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900, color: AppColors.bafNavy)),
+        Text(title, style: TextStyle(fontSize: 8, color: theme.textSecondary, fontWeight: FontWeight.bold)),
+        Text(value, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900, color: theme.textPrimary)),
       ],
     );
   }
@@ -496,6 +543,7 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
     bool isBold = false,
     TextAlign align = TextAlign.left,
     Color? color,
+    required CanteenThemeColors theme,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
@@ -505,20 +553,20 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
         style: TextStyle(
           fontSize: isHeader ? 9.5 : 10.5,
           fontWeight: (isHeader || isBold) ? FontWeight.bold : FontWeight.normal,
-          color: color ?? (isHeader ? Colors.white : AppColors.textPrimary),
+          color: color ?? (isHeader ? Colors.white : theme.textPrimary),
         ),
       ),
     );
   }
 
-  Widget _buildSignatureColumn(String title, String rank, String unit) {
+  Widget _buildSignatureColumn(String title, String rank, String unit, {required CanteenThemeColors theme}) {
     return Column(
       children: [
-        Container(width: 120, height: 1, color: AppColors.bafNavy),
+        Container(width: 120, height: 1, color: theme.cardBorder),
         const SizedBox(height: 5),
-        Text(title, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.bafNavy)),
-        Text(rank, style: const TextStyle(fontSize: 8.5, color: AppColors.textSecondary)),
-        Text(unit, style: const TextStyle(fontSize: 8, color: AppColors.textMuted)),
+        Text(title, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.bafGold)),
+        Text(rank, style: TextStyle(fontSize: 8.5, color: theme.textSecondary)),
+        Text(unit, style: TextStyle(fontSize: 8, color: theme.textSecondary)),
       ],
     );
   }
