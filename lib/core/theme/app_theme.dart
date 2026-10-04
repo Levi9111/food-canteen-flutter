@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'app_text_styles.dart';
+import 'canteen_theme_extension.dart';
 
 class AppTheme {
   static ThemeData get lightTheme {
@@ -110,6 +111,9 @@ class AppTheme {
         horizontalMargin: 12,
         columnSpacing: 16,
       ),
+      extensions: const [
+        CanteenThemeColors.light,
+      ],
     );
   }
 
@@ -118,19 +122,19 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       primaryColor: AppColors.bafGold,
-      scaffoldBackgroundColor: const Color(0xFF0D1B2A),
+      scaffoldBackgroundColor: const Color(0xFF0A1322),
       colorScheme: const ColorScheme.dark(
         primary: AppColors.bafGold,
         secondary: AppColors.bafGold,
-        surface: Color(0xFF1B263B),
-        error: AppColors.debitRed,
+        surface: Color(0xFF132238),
+        error: Color(0xFFEF4444),
         onPrimary: AppColors.bafNavy,
         onSecondary: AppColors.bafNavy,
-        onSurface: Colors.white,
+        onSurface: Color(0xFFF8FAFC),
         onError: Colors.white,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF0B132B),
+        backgroundColor: Color(0xFF060D17),
         foregroundColor: AppColors.bafGold,
         elevation: 0,
         centerTitle: false,
@@ -138,26 +142,26 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       ),
       cardTheme: const CardThemeData(
-        color: Color(0xFF1B263B),
+        color: Color(0xFF182A45),
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.zero,
-          side: BorderSide(color: Color(0xFF415A77), width: 1),
+          side: BorderSide(color: Color(0xFF2D4668), width: 1),
         ),
       ),
       inputDecorationTheme: const InputDecorationTheme(
         filled: true,
-        fillColor: Color(0xFF1B263B),
+        fillColor: Color(0xFF132238),
         isDense: true,
         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: Color(0xFF415A77), width: 1),
+          borderSide: BorderSide(color: Color(0xFF2D4668), width: 1),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: Color(0xFF415A77), width: 1),
+          borderSide: BorderSide(color: Color(0xFF2D4668), width: 1),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.zero,
@@ -182,6 +186,9 @@ class AppTheme {
           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
         ),
       ),
+      extensions: const [
+        CanteenThemeColors.dark,
+      ],
     );
   }
 }

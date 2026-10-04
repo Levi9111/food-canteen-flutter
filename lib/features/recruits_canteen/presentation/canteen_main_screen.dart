@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/animations/smooth_transitions.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/canteen_theme_extension.dart';
 import '../../../../core/widgets/baf_rts_crest.dart';
-import '../../../../core/widgets/modal_action_bar.dart';
 import '../../../../core/widgets/rts_bottom_nav_bar.dart';
 import '../../audit/presentation/monthly_audit_view.dart';
 import '../../p_staff_canteen/presentation/widgets/p_staff_daily_entry_view.dart';
 import '../../p_staff_canteen/presentation/widgets/p_staff_monthly_matrix_view.dart';
 import '../../p_staff_canteen/presentation/widgets/p_staff_spreadsheet_view.dart';
-import '../../p_staff_canteen/providers/p_staff_register_provider.dart';
 import '../../settings/presentation/settings_screen.dart';
-import '../constants/canteen_constants.dart';
 import '../providers/canteen_register_provider.dart';
 import 'widgets/daily_entry_view.dart';
 import 'widgets/monthly_matrix_view.dart';
@@ -30,239 +27,10 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen> {
   int _recruitsIndex = 0;
   int _pStaffIndex = 0;
 
-  void _showNewEntryDialog(BuildContext context, WidgetRef ref) {
-    final controller = TextEditingController();
-
-    showSmoothMilitaryDialog(
-      context: context,
-      child: Dialog(
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-        child: Container(
-          width: 360,
-          decoration: BoxDecoration(
-            color: AppColors.ledgerSurface,
-            border: Border.all(color: AppColors.bafNavy, width: 2),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                color: AppColors.bafNavy,
-                child: const Text(
-                  'CREATE NEW RECRUIT ENTRY BATCH',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11.5),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'ENTRY BATCH NUMBER (e.g. 55, 56):',
-                      style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: controller,
-                      keyboardType: TextInputType.number,
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        hintText: 'Enter batch number',
-                        isDense: true,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ModalActionBar(
-                      cancelLabel: 'CANCEL',
-                      confirmLabel: 'CREATE BATCH',
-                      onCancel: () => Navigator.of(context).pop(),
-                      onConfirm: () {
-                        final val = controller.text.trim();
-                        if (val.isNotEmpty) {
-                          ref.read(canteenRegisterProvider.notifier).addNewEntry(val);
-                        }
-                        Navigator.of(context).pop();
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showContextSettingsModal(BuildContext context, WidgetRef ref) {
-    final state = ref.read(canteenRegisterProvider);
-    final notifier = ref.read(canteenRegisterProvider.notifier);
-    final staffNotifier = ref.read(pStaffRegisterProvider.notifier);
-
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-      backgroundColor: AppColors.ledgerSurface,
-      builder: (ctx) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: AppColors.bafGold, width: 2)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'SESSION & DUTY PARAMETERS',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.6,
-                      color: AppColors.bafNavy,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 18),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-              const Divider(),
-              const SizedBox(height: 6),
-              const Text('ACTIVE RECRUIT ENTRY BATCH', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.ledgerBorder),
-                        color: Colors.white,
-                      ),
-                      child: DropdownButton<String>(
-                        value: state.activeEntry,
-                        isExpanded: true,
-                        underline: const SizedBox(),
-                        items: state.allEntries.map((e) {
-                          return DropdownMenuItem(value: e, child: Text('Entry $e'));
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            notifier.setActiveEntry(val);
-                            Navigator.pop(ctx);
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.add, size: 14),
-                    label: const Text('NEW BATCH'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.bafDeepBlue,
-                      foregroundColor: Colors.white,
-                      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-                    ),
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      _showNewEntryDialog(context, ref);
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              const Text('DUTY IN-CHARGE OFFICER', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildManagerSelectTile(
-                      title: 'SGT (NCOIC)',
-                      subtitle: 'Sergeant In-Charge',
-                      isSelected: state.activeManager == CanteenConstants.roleNcoic,
-                      onTap: () {
-                        notifier.setActiveManager(CanteenConstants.roleNcoic);
-                        staffNotifier.setActiveManager(CanteenConstants.roleNcoic);
-                        Navigator.pop(ctx);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildManagerSelectTile(
-                      title: 'WO (JCOIC)',
-                      subtitle: 'Warrant Officer In-Charge',
-                      isSelected: state.activeManager == CanteenConstants.roleJcoic,
-                      onTap: () {
-                        notifier.setActiveManager(CanteenConstants.roleJcoic);
-                        staffNotifier.setActiveManager(CanteenConstants.roleJcoic);
-                        Navigator.pop(ctx);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildManagerSelectTile({
-    required String title,
-    required String subtitle,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.bafNavy : Colors.white,
-          border: Border.all(
-            color: isSelected ? AppColors.bafGold : AppColors.ledgerBorder,
-            width: isSelected ? 1.5 : 1,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? AppColors.bafGold : AppColors.bafNavy,
-              ),
-            ),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 9,
-                color: isSelected ? Colors.white70 : AppColors.textMuted,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(canteenRegisterProvider);
+    final theme = context.canteenTheme;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -270,7 +38,7 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen> {
         final isMobile = screenWidth < 800;
 
         return Scaffold(
-          backgroundColor: AppColors.ledgerBackground,
+          backgroundColor: theme.background,
           // Bottom Navigation Bar with BAF military styling
           bottomNavigationBar: RtsBottomNavBar(
             currentIndex: _currentGroup == CanteenCustomerGroup.recruits ? _recruitsIndex : _pStaffIndex,
@@ -288,17 +56,17 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen> {
           body: SafeArea(
             child: Column(
               children: [
-                // 1. Command Masthead with BAF crest, title, context chip, and settings icon
+                // 1. Consolidated Command Masthead
                 Container(
                   width: double.infinity,
                   padding: EdgeInsets.symmetric(
                     horizontal: isMobile ? 10 : 16,
                     vertical: isMobile ? 6 : 8,
                   ),
-                  decoration: const BoxDecoration(
-                    color: AppColors.bafNavy,
+                  decoration: BoxDecoration(
+                    color: theme.headerBackground,
                     border: Border(
-                      bottom: BorderSide(color: AppColors.bafGold, width: 1.5),
+                      bottom: BorderSide(color: theme.accentGold, width: 1.5),
                     ),
                   ),
                   child: Row(
@@ -321,7 +89,7 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: theme.textOnHeader,
                                       fontSize: isMobile ? 13 : 15,
                                       fontWeight: FontWeight.w900,
                                       letterSpacing: 0.5,
@@ -342,7 +110,7 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen> {
                             Text(
                               'Recruits Training School • Shamshernagar',
                               style: TextStyle(
-                                color: Colors.white.withAlpha(180),
+                                color: theme.textOnHeader.withAlpha(180),
                                 fontSize: isMobile ? 8.5 : 10,
                               ),
                             ),
@@ -350,57 +118,53 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen> {
                         ),
                       ),
 
-                      // Context Capsule
+                      // Context Quick Badge (Taps directly to Settings)
                       InkWell(
-                        onTap: () => _showContextSettingsModal(context, ref),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                          );
+                        },
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppColors.bafDeepBlue,
-                            border: Border.all(color: AppColors.bafGold.withAlpha(180), width: 1),
+                            color: theme.headerSub,
+                            border: Border.all(color: theme.accentGold.withAlpha(180), width: 1),
                           ),
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    _currentGroup == CanteenCustomerGroup.recruits
-                                        ? 'ENTRY ${state.activeEntry}'
-                                        : 'P-STAFF',
-                                    style: const TextStyle(
-                                      color: AppColors.bafGold,
-                                      fontSize: 9.5,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    state.activeManager,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 8.5,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
+                              Text(
+                                _currentGroup == CanteenCustomerGroup.recruits
+                                    ? 'ENTRY ${state.activeEntry}'
+                                    : 'P-STAFF',
+                                style: TextStyle(
+                                  color: theme.accentGold,
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                              const SizedBox(width: 4),
-                              const Icon(Icons.arrow_drop_down, color: AppColors.bafGold, size: 16),
+                              Text(
+                                state.activeManager,
+                                style: TextStyle(
+                                  color: theme.textOnHeader,
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ],
                           ),
                         ),
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 4),
 
-                      // Header Settings Icon
+                      // Header Settings Icon (Full 48x48 Accessibility Target)
                       IconButton(
                         icon: const Icon(Icons.settings_outlined, color: AppColors.bafGold, size: 22),
                         tooltip: 'Settings & Structure',
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                         onPressed: () {
                           Navigator.push(
                             context,

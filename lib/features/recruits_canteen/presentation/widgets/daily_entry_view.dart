@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/animations/smooth_transitions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/canteen_theme_extension.dart';
 import '../../../../core/widgets/modal_action_bar.dart';
 import '../../../../core/widgets/squadron_dropdown.dart';
 import '../../models/daily_room_expense.dart';
@@ -26,6 +26,7 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
     final notifier = ref.read(canteenRegisterProvider.notifier);
     final currencyFormat = NumberFormat('#,##0.00', 'en_US');
     final isMobile = MediaQuery.of(context).size.width < 768;
+    final theme = context.canteenTheme;
 
     final structure = ref.watch(canteenStructureProvider);
 
@@ -63,11 +64,11 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
         Container(
           padding: EdgeInsets.symmetric(
             horizontal: isMobile ? 8 : 16,
-            vertical: 6,
+            vertical: 5,
           ),
-          decoration: const BoxDecoration(
-            color: AppColors.ledgerSurface,
-            border: Border(bottom: BorderSide(color: AppColors.ledgerBorderLight)),
+          decoration: BoxDecoration(
+            color: theme.surface,
+            border: Border(bottom: BorderSide(color: theme.cardBorderLight)),
           ),
           child: Row(
             children: [
@@ -98,13 +99,13 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppColors.ledgerBackground,
-                      border: Border.all(color: AppColors.ledgerBorder),
+                      color: theme.background,
+                      border: Border.all(color: theme.cardBorder),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.calendar_today, size: 12, color: AppColors.bafNavy),
+                        Icon(Icons.calendar_today, size: 12, color: theme.accentGold),
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
@@ -113,8 +114,8 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                                 .toUpperCase(),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.bafNavy,
+                            style: TextStyle(
+                              color: theme.textPrimary,
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 0.5,
@@ -145,6 +146,8 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   minimumSize: Size.zero,
                   visualDensity: VisualDensity.compact,
+                  foregroundColor: theme.accentGold,
+                  side: BorderSide(color: theme.accentGold),
                 ),
                 onPressed: () => notifier.setSelectedDate(DateTime.now()),
                 child: const Text('TODAY', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
@@ -164,24 +167,24 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
           ),
         ),
 
-        // 3. Crisp Unified Daily Calculation Ribbon (No clutter, No nested horizontal scroll)
+        // 3. Crisp Unified Daily Calculation Ribbon
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          color: AppColors.bafLightBlue.withAlpha(120),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+          color: theme.tableHighlight,
           child: Row(
             children: [
               Expanded(
                 child: RichText(
                   text: TextSpan(
-                    style: const TextStyle(fontSize: 11, color: AppColors.textPrimary),
+                    style: TextStyle(fontSize: 11, color: theme.textPrimary),
                     children: [
                       TextSpan(
                         text: '${state.selectedSquadron.toUpperCase()} SQN: ',
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.bafDeepBlue),
+                        style: TextStyle(fontWeight: FontWeight.bold, color: theme.textSecondary),
                       ),
                       TextSpan(
                         text: '৳ ${currencyFormat.format(sqnDayTotal)}',
-                        style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.bafNavy),
+                        style: TextStyle(fontWeight: FontWeight.w900, color: theme.accentGold),
                       ),
                     ],
                   ),
@@ -190,20 +193,20 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
               Container(
                 height: 14,
                 width: 1,
-                color: AppColors.ledgerBorder,
+                color: theme.cardBorderLight,
                 margin: const EdgeInsets.symmetric(horizontal: 8),
               ),
               RichText(
                 text: TextSpan(
-                  style: const TextStyle(fontSize: 11, color: AppColors.textPrimary),
+                  style: TextStyle(fontSize: 11, color: theme.textPrimary),
                   children: [
-                    const TextSpan(
+                    TextSpan(
                       text: 'ALL SQNS: ',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                      style: TextStyle(fontWeight: FontWeight.bold, color: theme.textSecondary),
                     ),
                     TextSpan(
                       text: '৳ ${currencyFormat.format(allSqnDayTotal)}',
-                      style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.debitRed),
+                      style: TextStyle(fontWeight: FontWeight.w900, color: theme.debit),
                     ),
                   ],
                 ),
@@ -212,7 +215,7 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
           ),
         ),
 
-        // 4. Room Register List (Fluid Vertical Scrolling without Gesture Clashes)
+        // 4. Room Register List
         Expanded(
           child: (isMobile && !_forceTableView)
               ? _buildMobileRoomCards(context, state, currencyFormat)
@@ -228,6 +231,7 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
     CanteenRegisterState state,
     NumberFormat currencyFormat,
   ) {
+    final theme = context.canteenTheme;
     final rooms = ref.watch(canteenStructureProvider).getRoomsForSquadron(state.selectedSquadron);
 
     return ListView.builder(
@@ -247,9 +251,9 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
           padding: const EdgeInsets.only(bottom: 7),
           child: Container(
             decoration: BoxDecoration(
-              color: hasEntry ? Colors.white : AppColors.ledgerSurface,
+              color: hasEntry ? theme.cardBackground : theme.surface,
               border: Border.all(
-                color: hasEntry ? AppColors.bafGold : AppColors.ledgerBorder,
+                color: hasEntry ? theme.accentGold : theme.cardBorder,
                 width: hasEntry ? 1.5 : 1.0,
               ),
             ),
@@ -269,11 +273,11 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                     // Index Tag & Room Number
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                      color: hasEntry ? AppColors.bafNavy : AppColors.ledgerBorderLight,
+                      color: hasEntry ? AppColors.bafNavy : theme.cardBorderLight,
                       child: Text(
                         '#${idx + 1}',
                         style: TextStyle(
-                          color: hasEntry ? AppColors.bafGold : AppColors.textSecondary,
+                          color: hasEntry ? AppColors.bafGold : theme.textSecondary,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
@@ -290,23 +294,23 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                             children: [
                               Text(
                                 room,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w900,
-                                  color: AppColors.bafNavy,
+                                  color: theme.textPrimary,
                                 ),
                               ),
                               if (hasEntry) ...[
                                 const SizedBox(width: 6),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                  color: AppColors.bafLightBlue,
+                                  color: theme.tableHighlight,
                                   child: Text(
                                     expense.recordedBy,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 8.5,
                                       fontWeight: FontWeight.bold,
-                                      color: AppColors.bafDeepBlue,
+                                      color: theme.accentGold,
                                     ),
                                   ),
                                 ),
@@ -324,7 +328,7 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 10.5,
-                              color: hasEntry ? AppColors.textPrimary : AppColors.textMuted,
+                              color: hasEntry ? theme.textPrimary : theme.textSecondary,
                               fontStyle: hasEntry ? FontStyle.normal : FontStyle.italic,
                             ),
                           ),
@@ -343,14 +347,14 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                           style: TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w900,
-                            color: hasEntry ? AppColors.debitRed : AppColors.textMuted,
+                            color: hasEntry ? theme.debit : theme.textSecondary,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: hasEntry ? AppColors.bafDeepBlue : AppColors.bafGold,
+                            color: hasEntry ? AppColors.bafNavy : theme.accentGold,
                           ),
                           child: Text(
                             hasEntry ? 'EDIT' : '+ LOG',
@@ -379,14 +383,15 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
     CanteenRegisterState state,
     NumberFormat currencyFormat,
   ) {
+    final theme = context.canteenTheme;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 1100),
           decoration: BoxDecoration(
-            color: AppColors.ledgerSurface,
-            border: Border.all(color: AppColors.ledgerBorder),
+            color: theme.surface,
+            border: Border.all(color: theme.cardBorder),
           ),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -409,100 +414,101 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                 (idx) {
                   final room = ref.watch(canteenStructureProvider).getRoomsForSquadron(state.selectedSquadron)[idx];
                   final expense = state.getExpense(
-                  state.activeEntry,
-                  state.selectedSquadron,
-                  room,
-                  state.selectedDate,
-                );
-                final isEven = idx % 2 == 0;
-                final hasEntry = expense != null && expense.amount > 0;
+                    state.activeEntry,
+                    state.selectedSquadron,
+                    room,
+                    state.selectedDate,
+                  );
+                  final isEven = idx % 2 == 0;
+                  final hasEntry = expense != null && expense.amount > 0;
 
-                return DataRow(
-                  color: WidgetStateProperty.all(
-                    hasEntry
-                        ? (isEven ? AppColors.bafLightBlue.withAlpha(90) : AppColors.bafLightBlue.withAlpha(50))
-                        : (isEven ? AppColors.ledgerSurface : AppColors.ledgerStripe),
-                  ),
-                  cells: [
-                    DataCell(Text('${idx + 1}', style: const TextStyle(fontSize: 12))),
-                    DataCell(
-                      Text(
-                        room,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.bafNavy,
+                  return DataRow(
+                    color: WidgetStateProperty.all(
+                      hasEntry
+                          ? theme.tableHighlight
+                          : (isEven ? theme.surface : theme.cardBackground),
+                    ),
+                    cells: [
+                      DataCell(Text('${idx + 1}', style: TextStyle(fontSize: 12, color: theme.textPrimary))),
+                      DataCell(
+                        Text(
+                          room,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: theme.textPrimary,
+                          ),
                         ),
                       ),
-                    ),
-                    DataCell(
-                      Text(
-                        expense?.representativeName ?? '—',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: hasEntry ? AppColors.textPrimary : AppColors.textMuted,
+                      DataCell(
+                        Text(
+                          expense?.representativeName ?? '—',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: hasEntry ? theme.textPrimary : theme.textSecondary,
+                          ),
                         ),
                       ),
-                    ),
-                    DataCell(
-                      Text(
-                        expense?.itemsDescription ?? 'Nil consumption',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontStyle: hasEntry ? FontStyle.normal : FontStyle.italic,
-                          color: hasEntry ? AppColors.textPrimary : AppColors.textMuted,
+                      DataCell(
+                        Text(
+                          expense?.itemsDescription ?? 'Nil consumption',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontStyle: hasEntry ? FontStyle.normal : FontStyle.italic,
+                            color: hasEntry ? theme.textPrimary : theme.textSecondary,
+                          ),
                         ),
                       ),
-                    ),
-                    DataCell(
-                      expense != null
-                          ? Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              color: AppColors.bafNavy,
-                              child: Text(
-                                expense.recordedBy,
-                                style: const TextStyle(
-                                  color: AppColors.bafGold,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
+                      DataCell(
+                        expense != null
+                            ? Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                color: AppColors.bafNavy,
+                                child: Text(
+                                  expense.recordedBy,
+                                  style: const TextStyle(
+                                    color: AppColors.bafGold,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                            )
-                          : const Text('—', style: TextStyle(color: AppColors.textMuted)),
-                    ),
-                    DataCell(
-                      Text(
-                        hasEntry ? '৳ ${currencyFormat.format(expense.amount)}' : '৳ 0.00',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: hasEntry ? FontWeight.bold : FontWeight.normal,
-                          color: hasEntry ? AppColors.debitRed : AppColors.textMuted,
+                              )
+                            : Text('—', style: TextStyle(color: theme.textSecondary)),
+                      ),
+                      DataCell(
+                        Text(
+                          hasEntry ? '৳ ${currencyFormat.format(expense.amount)}' : '৳ 0.00',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: hasEntry ? FontWeight.bold : FontWeight.normal,
+                            color: hasEntry ? theme.debit : theme.textSecondary,
+                          ),
                         ),
                       ),
-                    ),
-                    DataCell(
-                      ElevatedButton.icon(
-                        icon: Icon(hasEntry ? Icons.edit : Icons.add, size: 13),
-                        label: Text(hasEntry ? 'EDIT' : 'ENTER'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: hasEntry ? AppColors.bafDeepBlue : AppColors.bafGold,
-                          foregroundColor: hasEntry ? Colors.white : AppColors.bafNavy,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                      DataCell(
+                        ElevatedButton.icon(
+                          icon: Icon(hasEntry ? Icons.edit : Icons.add, size: 13),
+                          label: Text(hasEntry ? 'EDIT' : 'ENTER'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: hasEntry ? AppColors.bafDeepBlue : AppColors.bafGold,
+                            foregroundColor: hasEntry ? Colors.white : AppColors.bafNavy,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                          ),
+                          onPressed: () {
+                            _showDailyExpenseModal(
+                              context,
+                              ref,
+                              room: room,
+                              existingExpense: expense,
+                            );
+                          },
                         ),
-                        onPressed: () {
-                          _showDailyExpenseModal(
-                            context,
-                            ref,
-                            room: room,
-                            existingExpense: expense,
-                          );
-                        },
                       ),
-                    ),
-                  ],
-                );
-              }),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
         ),
@@ -517,6 +523,7 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
     DailyRoomExpense? existingExpense,
   }) {
     final state = ref.read(canteenRegisterProvider);
+    final theme = context.canteenTheme;
     final amountController = TextEditingController(
       text: existingExpense != null && existingExpense.amount > 0
           ? existingExpense.amount.toStringAsFixed(2)
@@ -530,190 +537,208 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
     );
     final dateFormat = DateFormat('dd MMMM yyyy');
 
-    showSmoothMilitaryDialog(
+    showModalBottomSheet(
       context: context,
-      child: Dialog(
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 480),
-          decoration: BoxDecoration(
-            color: AppColors.ledgerSurface,
-            border: Border.all(color: AppColors.bafNavy, width: 2),
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  color: AppColors.bafNavy,
-                  child: Row(
-                    children: [
-                      const Icon(Icons.menu_book, color: AppColors.bafGold, size: 18),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'CANTEEN BOOK — ${state.selectedSquadron.toUpperCase()} SQN • $room',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+        return Padding(
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 520),
+              decoration: BoxDecoration(
+                color: theme.surface,
+                border: Border.all(color: AppColors.bafNavy, width: 2),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      color: AppColors.bafNavy,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.menu_book, color: AppColors.bafGold, size: 18),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'CANTEEN BOOK — ${state.selectedSquadron.toUpperCase()} SQN • $room',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                        ),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                            onPressed: () => Navigator.of(ctx).pop(),
+                          ),
+                        ],
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white, size: 18),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ],
-                  ),
-                ),
+                    ),
 
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Context Strip
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        color: AppColors.bafLightBlue,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              dateFormat.format(state.selectedDate).toUpperCase(),
-                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              'ENTRY: ${state.activeEntry}',
-                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                              color: AppColors.bafNavy,
-                              child: Text(
-                                state.activeManager,
-                                style: const TextStyle(
-                                  fontSize: 9.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.bafGold,
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Context Strip
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            color: theme.tableHighlight,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  dateFormat.format(state.selectedDate).toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.textPrimary,
+                                  ),
                                 ),
-                              ),
+                                Text(
+                                  'ENTRY: ${state.activeEntry}',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.textPrimary,
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                  color: AppColors.bafNavy,
+                                  child: Text(
+                                    state.activeManager,
+                                    style: const TextStyle(
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.bafGold,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
+                          ),
 
-                      const SizedBox(height: 14),
+                          const SizedBox(height: 14),
 
-                      // Amount Field
-                      const Text(
-                        'TOTAL ROOM PRICE VALUE (TK) *',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: amountController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        autofocus: true,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.debitRed,
-                        ),
-                        decoration: const InputDecoration(
-                          prefixText: '৳ ',
-                          hintText: '0.00',
-                          isDense: true,
-                        ),
-                      ),
+                          // Amount Field
+                          Text(
+                            'TOTAL ROOM PRICE VALUE (TK) *',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: theme.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: amountController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            autofocus: true,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: theme.debit,
+                            ),
+                            decoration: const InputDecoration(
+                              prefixText: '৳ ',
+                              hintText: '0.00',
+                              isDense: true,
+                            ),
+                          ),
 
-                      const SizedBox(height: 12),
+                          const SizedBox(height: 12),
 
-                      // Representative
-                      const Text(
-                        'ATTENDING ROOM REPRESENTATIVE',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: repController,
-                        decoration: const InputDecoration(
-                          hintText: 'e.g. Recruit Tariqul (Chest 42) / Room Rep',
-                          isDense: true,
-                        ),
-                      ),
+                          // Representative
+                          Text(
+                            'ATTENDING ROOM REPRESENTATIVE',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: theme.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: repController,
+                            decoration: const InputDecoration(
+                              hintText: 'e.g. Recruit Tariqul (Chest 42) / Room Rep',
+                              isDense: true,
+                            ),
+                          ),
 
-                      const SizedBox(height: 12),
+                          const SizedBox(height: 12),
 
-                      // Items Description
-                      const Text(
-                        'ITEMS PICKED / PARTICULARS',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: itemsController,
-                        decoration: const InputDecoration(
-                          hintText: 'e.g. Snacks, biscuits, tea, toiletries',
-                          isDense: true,
-                        ),
-                      ),
+                          // Items Description
+                          Text(
+                            'ITEMS PICKED / PARTICULARS',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: theme.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: itemsController,
+                            decoration: const InputDecoration(
+                              hintText: 'e.g. Snacks, biscuits, tea, toiletries',
+                              isDense: true,
+                            ),
+                          ),
 
-                      const SizedBox(height: 16),
+                          const SizedBox(height: 16),
 
-                      // Actions
-                      ModalActionBar(
-                        cancelLabel: 'CANCEL',
-                        confirmLabel: 'SAVE PRICE IN BOOK',
-                        onCancel: () => Navigator.of(context).pop(),
-                        onConfirm: () async {
-                          final amt = double.tryParse(amountController.text.trim()) ?? 0.0;
-                          await ref.read(canteenRegisterProvider.notifier).recordRoomExpense(
-                            room: room,
-                            amount: amt,
-                            representativeName: repController.text.trim().isEmpty
-                                ? null
-                                : repController.text.trim(),
-                            itemsDescription: itemsController.text.trim().isEmpty
-                                ? null
-                                : itemsController.text.trim(),
-                          );
-                          if (context.mounted) {
-                            Navigator.of(context).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Saved: $room - ৳ ${amt.toStringAsFixed(2)}'),
-                                backgroundColor: AppColors.cleared,
-                                duration: const Duration(seconds: 2),
-                              ),
-                            );
-                          }
-                        },
+                          // Actions
+                          ModalActionBar(
+                            cancelLabel: 'CANCEL',
+                            confirmLabel: 'SAVE PRICE IN BOOK',
+                            onCancel: () => Navigator.of(ctx).pop(),
+                            onConfirm: () async {
+                              final amt = double.tryParse(amountController.text.trim()) ?? 0.0;
+                              await ref.read(canteenRegisterProvider.notifier).recordRoomExpense(
+                                room: room,
+                                amount: amt,
+                                representativeName: repController.text.trim().isEmpty
+                                    ? null
+                                    : repController.text.trim(),
+                                itemsDescription: itemsController.text.trim().isEmpty
+                                    ? null
+                                    : itemsController.text.trim(),
+                              );
+                              if (ctx.mounted) {
+                                Navigator.of(ctx).pop();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Saved: $room - ৳ ${amt.toStringAsFixed(2)}'),
+                                    backgroundColor: AppColors.cleared,
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
