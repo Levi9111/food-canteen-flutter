@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../localization/locale_provider.dart';
 import '../theme/app_colors.dart';
 
-class RtsBottomNavBar extends StatelessWidget {
+class RtsBottomNavBar extends ConsumerWidget {
   final int currentIndex;
   final ValueChanged<int> onDestinationSelected;
   final bool isRecruitsGroup;
@@ -14,7 +16,8 @@ class RtsBottomNavBar extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(localeProvider);
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.bafNavy,
@@ -50,38 +53,38 @@ class RtsBottomNavBar extends StatelessWidget {
           selectedIndex: currentIndex,
           onDestinationSelected: onDestinationSelected,
           destinations: isRecruitsGroup
-              ? const [
+              ? [
                   NavigationDestination(
-                    icon: Icon(Icons.menu_book_outlined),
-                    selectedIcon: Icon(Icons.menu_book),
-                    label: 'REGISTER',
+                    icon: const Icon(Icons.menu_book_outlined),
+                    selectedIcon: const Icon(Icons.menu_book),
+                    label: AppTranslations.tr('register', lang),
                   ),
                   NavigationDestination(
-                    icon: Icon(Icons.grid_on_outlined),
-                    selectedIcon: Icon(Icons.grid_on),
-                    label: 'MATRIX',
+                    icon: const Icon(Icons.grid_on_outlined),
+                    selectedIcon: const Icon(Icons.grid_on),
+                    label: AppTranslations.tr('matrix', lang),
                   ),
                   NavigationDestination(
-                    icon: Icon(Icons.verified_outlined),
-                    selectedIcon: Icon(Icons.verified),
-                    label: 'AUDIT',
+                    icon: const Icon(Icons.verified_outlined),
+                    selectedIcon: const Icon(Icons.verified),
+                    label: AppTranslations.tr('audit', lang),
                   ),
                 ]
-              : const [
+              : [
                   NavigationDestination(
-                    icon: Icon(Icons.person_outline),
-                    selectedIcon: Icon(Icons.person),
-                    label: 'STAFF BOOK',
+                    icon: const Icon(Icons.person_outline),
+                    selectedIcon: const Icon(Icons.person),
+                    label: AppTranslations.tr('staff_book', lang),
                   ),
                   NavigationDestination(
-                    icon: Icon(Icons.grid_on_outlined),
-                    selectedIcon: Icon(Icons.grid_on),
-                    label: 'MATRIX',
+                    icon: const Icon(Icons.grid_on_outlined),
+                    selectedIcon: const Icon(Icons.grid_on),
+                    label: AppTranslations.tr('matrix', lang),
                   ),
                   NavigationDestination(
-                    icon: Icon(Icons.picture_as_pdf_outlined),
-                    selectedIcon: Icon(Icons.picture_as_pdf),
-                    label: 'STATEMENT',
+                    icon: const Icon(Icons.picture_as_pdf_outlined),
+                    selectedIcon: const Icon(Icons.picture_as_pdf),
+                    label: AppTranslations.tr('statement', lang),
                   ),
                 ],
         ),

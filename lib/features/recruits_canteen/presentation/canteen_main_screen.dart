@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/localization/locale_provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/canteen_theme_extension.dart';
 import '../../../../core/widgets/baf_rts_crest.dart';
@@ -31,6 +32,7 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(canteenRegisterProvider);
     final theme = context.canteenTheme;
+    final lang = ref.watch(localeProvider);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -85,7 +87,7 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen> {
                               children: [
                                 Flexible(
                                   child: Text(
-                                    'FOOD CANTEEN, RTS',
+                                    AppTranslations.tr('app_title', lang),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -108,7 +110,7 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen> {
                               ],
                             ),
                             Text(
-                              'Recruits Training School • Shamshernagar',
+                              AppTranslations.tr('app_subtitle', lang),
                               style: TextStyle(
                                 color: theme.textOnHeader.withAlpha(180),
                                 fontSize: isMobile ? 8.5 : 10,
@@ -138,7 +140,7 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen> {
                             children: [
                               Text(
                                 _currentGroup == CanteenCustomerGroup.recruits
-                                    ? 'ENTRY ${state.activeEntry}'
+                                    ? '${AppTranslations.tr('entry', lang).toUpperCase()} ${state.activeEntry}'
                                     : 'P-STAFF',
                                 style: TextStyle(
                                   color: theme.accentGold,
@@ -163,7 +165,7 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen> {
                       // Header Settings Icon (Full 48x48 Accessibility Target)
                       IconButton(
                         icon: const Icon(Icons.settings_outlined, color: AppColors.bafGold, size: 22),
-                        tooltip: 'Settings & Structure',
+                        tooltip: AppTranslations.tr('settings', lang),
                         constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                         onPressed: () {
                           Navigator.push(
@@ -208,7 +210,7 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen> {
                                 const SizedBox(width: 4),
                                 Flexible(
                                   child: Text(
-                                    isMobile ? 'RECRUITS' : '1. RECRUITS CANTEEN (ROOM-WISE)',
+                                    isMobile ? AppTranslations.tr('recruits_canteen', lang).split(' ').first : AppTranslations.tr('recruits_canteen', lang),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -251,7 +253,7 @@ class _CanteenMainScreenState extends ConsumerState<CanteenMainScreen> {
                                 const SizedBox(width: 4),
                                 Flexible(
                                   child: Text(
-                                    isMobile ? 'P-STAFFS' : '2. P-STAFFS CANTEEN (INDIVIDUAL)',
+                                    isMobile ? AppTranslations.tr('p_staff_canteen', lang).split(' ').first : AppTranslations.tr('p_staff_canteen', lang),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(

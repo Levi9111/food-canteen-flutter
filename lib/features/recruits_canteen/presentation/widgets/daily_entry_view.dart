@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/localization/locale_provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/canteen_theme_extension.dart';
@@ -702,8 +703,8 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
 
                           // Actions
                           ModalActionBar(
-                            cancelLabel: 'CANCEL',
-                            confirmLabel: 'SAVE PRICE IN BOOK',
+                            cancelLabel: AppTranslations.tr('cancel', ref.read(localeProvider)),
+                            confirmLabel: AppTranslations.tr('save_price', ref.read(localeProvider)),
                             onCancel: () => Navigator.of(ctx).pop(),
                             onConfirm: () async {
                               final amt = double.tryParse(amountController.text.trim()) ?? 0.0;
