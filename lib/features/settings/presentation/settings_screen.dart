@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/localization/locale_provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/canteen_theme_extension.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/widgets/baf_rts_crest.dart';
 import '../../../core/widgets/modal_action_bar.dart';
@@ -21,65 +22,82 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   void _showAddSquadronDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController();
-    showDialog(
+    final theme = context.canteenTheme;
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) {
-        return Dialog(
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-          child: Container(
-            width: 360,
-            color: AppColors.ledgerSurface,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  color: AppColors.bafNavy,
-                  child: const Text(
-                    'ADD NEW SQUADRON',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: Center(
+            child: Container(
+              width: 380,
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: theme.cardBackground,
+                border: Border.all(color: theme.accentGold, width: 1.5),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    color: AppColors.bafNavy,
+                    child: const Text(
+                      'ADD NEW SQUADRON',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'SQUADRON NAME (e.g. Meghna, Jamuna):',
-                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: controller,
-                        autofocus: true,
-                        decoration: const InputDecoration(hintText: 'Enter squadron name', isDense: true),
-                      ),
-                      const SizedBox(height: 16),
-                      ModalActionBar(
-                        cancelLabel: 'CANCEL',
-                        confirmLabel: 'ADD SQUADRON',
-                        onCancel: () => Navigator.of(ctx).pop(),
-                        onConfirm: () async {
-                          final val = controller.text.trim();
-                          if (val.isNotEmpty) {
-                            final success = await ref.read(canteenStructureProvider.notifier).addSquadron(val);
-                            if (ctx.mounted) {
-                              Navigator.of(ctx).pop();
-                              if (!success) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Squadron already exists or invalid')),
-                                );
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'SQUADRON NAME (e.g. Meghna, Jamuna):',
+                          style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textPrimary),
+                        ),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: controller,
+                          autofocus: true,
+                          style: TextStyle(color: theme.textPrimary, fontSize: 13),
+                          decoration: InputDecoration(
+                            hintText: 'Enter squadron name',
+                            hintStyle: TextStyle(color: theme.textSecondary),
+                            filled: true,
+                            fillColor: theme.surface,
+                            isDense: true,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: theme.cardBorder)),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ModalActionBar(
+                          cancelLabel: 'CANCEL',
+                          confirmLabel: 'ADD SQUADRON',
+                          onCancel: () => Navigator.of(ctx).pop(),
+                          onConfirm: () async {
+                            final val = controller.text.trim();
+                            if (val.isNotEmpty) {
+                              final success = await ref.read(canteenStructureProvider.notifier).addSquadron(val);
+                              if (ctx.mounted) {
+                                Navigator.of(ctx).pop();
+                                if (!success) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Squadron already exists or invalid')),
+                                  );
+                                }
                               }
                             }
-                          }
-                        },
-                      ),
-                    ],
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -89,65 +107,82 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   void _showAddRoomDialog(BuildContext context, WidgetRef ref, String squadron) {
     final controller = TextEditingController();
-    showDialog(
+    final theme = context.canteenTheme;
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) {
-        return Dialog(
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-          child: Container(
-            width: 360,
-            color: AppColors.ledgerSurface,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  color: AppColors.bafNavy,
-                  child: Text(
-                    'ADD ROOM TO $squadron SQN',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: Center(
+            child: Container(
+              width: 380,
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: theme.cardBackground,
+                border: Border.all(color: theme.accentGold, width: 1.5),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    color: AppColors.bafNavy,
+                    child: Text(
+                      'ADD ROOM TO $squadron SQN',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'ROOM NAME (e.g. Room 17):',
-                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: controller,
-                        autofocus: true,
-                        decoration: const InputDecoration(hintText: 'Enter room name', isDense: true),
-                      ),
-                      const SizedBox(height: 16),
-                      ModalActionBar(
-                        cancelLabel: 'CANCEL',
-                        confirmLabel: 'ADD ROOM',
-                        onCancel: () => Navigator.of(ctx).pop(),
-                        onConfirm: () async {
-                          final val = controller.text.trim();
-                          if (val.isNotEmpty) {
-                            final success = await ref.read(canteenStructureProvider.notifier).addRoom(squadron, val);
-                            if (ctx.mounted) {
-                              Navigator.of(ctx).pop();
-                              if (!success) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Room already exists in this squadron')),
-                                );
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'ROOM NAME (e.g. Room 17):',
+                          style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textPrimary),
+                        ),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: controller,
+                          autofocus: true,
+                          style: TextStyle(color: theme.textPrimary, fontSize: 13),
+                          decoration: InputDecoration(
+                            hintText: 'Enter room name',
+                            hintStyle: TextStyle(color: theme.textSecondary),
+                            filled: true,
+                            fillColor: theme.surface,
+                            isDense: true,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: theme.cardBorder)),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ModalActionBar(
+                          cancelLabel: 'CANCEL',
+                          confirmLabel: 'ADD ROOM',
+                          onCancel: () => Navigator.of(ctx).pop(),
+                          onConfirm: () async {
+                            final val = controller.text.trim();
+                            if (val.isNotEmpty) {
+                              final success = await ref.read(canteenStructureProvider.notifier).addRoom(squadron, val);
+                              if (ctx.mounted) {
+                                Navigator.of(ctx).pop();
+                                if (!success) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Room already exists in this squadron')),
+                                  );
+                                }
                               }
                             }
-                          }
-                        },
-                      ),
-                    ],
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -157,59 +192,76 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   void _showNewEntryDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController();
-    showDialog(
+    final theme = context.canteenTheme;
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) {
-        return Dialog(
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-          child: Container(
-            width: 360,
-            color: AppColors.ledgerSurface,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  color: AppColors.bafNavy,
-                  child: const Text(
-                    'CREATE NEW RECRUIT ENTRY BATCH',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11.5),
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: Center(
+            child: Container(
+              width: 380,
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: theme.cardBackground,
+                border: Border.all(color: theme.accentGold, width: 1.5),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    color: AppColors.bafNavy,
+                    child: const Text(
+                      'CREATE NEW RECRUIT ENTRY BATCH',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11.5),
+                    ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'ENTRY BATCH NUMBER (e.g. 55, 56):',
-                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: controller,
-                        keyboardType: TextInputType.number,
-                        autofocus: true,
-                        decoration: const InputDecoration(hintText: 'Enter batch number', isDense: true),
-                      ),
-                      const SizedBox(height: 16),
-                      ModalActionBar(
-                        cancelLabel: 'CANCEL',
-                        confirmLabel: 'CREATE BATCH',
-                        onCancel: () => Navigator.of(ctx).pop(),
-                        onConfirm: () {
-                          final val = controller.text.trim();
-                          if (val.isNotEmpty) {
-                            ref.read(canteenRegisterProvider.notifier).addNewEntry(val);
-                          }
-                          Navigator.of(ctx).pop();
-                        },
-                      ),
-                    ],
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'ENTRY BATCH NUMBER (e.g. 55, 56):',
+                          style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textPrimary),
+                        ),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: controller,
+                          keyboardType: TextInputType.number,
+                          autofocus: true,
+                          style: TextStyle(color: theme.textPrimary, fontSize: 13),
+                          decoration: InputDecoration(
+                            hintText: 'Enter batch number',
+                            hintStyle: TextStyle(color: theme.textSecondary),
+                            filled: true,
+                            fillColor: theme.surface,
+                            isDense: true,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: theme.cardBorder)),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ModalActionBar(
+                          cancelLabel: 'CANCEL',
+                          confirmLabel: 'CREATE BATCH',
+                          onCancel: () => Navigator.of(ctx).pop(),
+                          onConfirm: () {
+                            final val = controller.text.trim();
+                            if (val.isNotEmpty) {
+                              ref.read(canteenRegisterProvider.notifier).addNewEntry(val);
+                            }
+                            Navigator.of(ctx).pop();
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -217,19 +269,97 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _confirmLogout(BuildContext context, WidgetRef ref) {
+  void _confirmRemoveSquadron(BuildContext context, WidgetRef ref, String sqn, VoidCallback onConfirmed) {
+    final theme = context.canteenTheme;
     showDialog(
       context: context,
       builder: (ctx) {
         return AlertDialog(
+          backgroundColor: theme.cardBackground,
           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-          title: const Text('CONFIRM LOGOUT', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          content: const Text('Are you sure you want to end this duty session and log out?'),
+          title: Text(
+            'CONFIRM SQUADRON REMOVAL',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: theme.debit),
+          ),
+          content: Text(
+            'Are you sure you want to remove "$sqn Squadron" and all its assigned rooms? This action cannot be undone.',
+            style: TextStyle(fontSize: 12, color: theme.textPrimary),
+          ),
+          actions: [
+            ModalActionBar(
+              cancelLabel: 'CANCEL',
+              confirmLabel: 'REMOVE SQUADRON',
+              confirmColor: theme.debit,
+              confirmTextColor: Colors.white,
+              confirmIcon: Icons.delete_forever,
+              onCancel: () => Navigator.of(ctx).pop(),
+              onConfirm: () {
+                Navigator.of(ctx).pop();
+                onConfirmed();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _confirmRemoveRoom(BuildContext context, WidgetRef ref, String squadron, String room, VoidCallback onConfirmed) {
+    final theme = context.canteenTheme;
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: theme.cardBackground,
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          title: Text(
+            'CONFIRM ROOM REMOVAL',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: theme.debit),
+          ),
+          content: Text(
+            'Are you sure you want to remove "$room" from $squadron Squadron?',
+            style: TextStyle(fontSize: 12, color: theme.textPrimary),
+          ),
+          actions: [
+            ModalActionBar(
+              cancelLabel: 'CANCEL',
+              confirmLabel: 'REMOVE ROOM',
+              confirmColor: theme.debit,
+              confirmTextColor: Colors.white,
+              confirmIcon: Icons.delete,
+              onCancel: () => Navigator.of(ctx).pop(),
+              onConfirm: () {
+                Navigator.of(ctx).pop();
+                onConfirmed();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _confirmLogout(BuildContext context, WidgetRef ref) {
+    final theme = context.canteenTheme;
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: theme.cardBackground,
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          title: Text(
+            'CONFIRM LOGOUT',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: theme.textPrimary),
+          ),
+          content: Text(
+            'Are you sure you want to end this duty session and log out?',
+            style: TextStyle(fontSize: 12, color: theme.textSecondary),
+          ),
           actions: [
             ModalActionBar(
               cancelLabel: 'CANCEL',
               confirmLabel: 'LOGOUT',
-              confirmColor: AppColors.debitRed,
+              confirmColor: theme.debit,
               confirmTextColor: Colors.white,
               confirmIcon: Icons.logout,
               onCancel: () => Navigator.of(ctx).pop(),
@@ -257,6 +387,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final registerNotifier = ref.read(canteenRegisterProvider.notifier);
     final session = ref.watch(sessionProvider);
 
+    final theme = context.canteenTheme;
     final squadrons = structure.squadrons;
     final activeSquadron = _selectedSquadronForRooms != null && squadrons.contains(_selectedSquadronForRooms)
         ? _selectedSquadronForRooms!
@@ -264,7 +395,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final roomsForActiveSqn = structure.getRoomsForSquadron(activeSquadron);
 
     return Scaffold(
-      backgroundColor: AppColors.ledgerBackground,
+      backgroundColor: theme.background,
       appBar: AppBar(
         backgroundColor: AppColors.bafNavy,
         title: const Text(
@@ -283,11 +414,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _buildSectionHeader(Icons.palette_outlined, 'APPEARANCE & THEME'),
             Container(
               padding: const EdgeInsets.all(12),
-              color: AppColors.ledgerSurface,
+              decoration: BoxDecoration(
+                color: theme.cardBackground,
+                border: Border.all(color: theme.cardBorderLight),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('THEME MODE (LIGHT / DARK):', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
+                  Text('THEME MODE (LIGHT / DARK):', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textPrimary)),
                   const SizedBox(height: 8),
                   Row(
                     children: [
@@ -297,6 +431,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           icon: Icons.light_mode,
                           isSelected: themeMode == ThemeMode.light,
                           onTap: () => themeNotifier.setThemeMode(ThemeMode.light),
+                          theme: theme,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -306,6 +441,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           icon: Icons.dark_mode,
                           isSelected: themeMode == ThemeMode.dark,
                           onTap: () => themeNotifier.setThemeMode(ThemeMode.dark),
+                          theme: theme,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -315,6 +451,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           icon: Icons.brightness_auto,
                           isSelected: themeMode == ThemeMode.system,
                           onTap: () => themeNotifier.setThemeMode(ThemeMode.system),
+                          theme: theme,
                         ),
                       ),
                     ],
@@ -328,11 +465,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _buildSectionHeader(Icons.language, 'LANGUAGE (ভাষা)'),
             Container(
               padding: const EdgeInsets.all(12),
-              color: AppColors.ledgerSurface,
+              decoration: BoxDecoration(
+                color: theme.cardBackground,
+                border: Border.all(color: theme.cardBorderLight),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('APP UI LANGUAGE:', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
+                  Text('APP UI LANGUAGE:', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textPrimary)),
                   const SizedBox(height: 8),
                   Row(
                     children: [
@@ -342,6 +482,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           icon: Icons.check,
                           isSelected: language == AppLanguage.english,
                           onTap: () => localeNotifier.setLanguage(AppLanguage.english),
+                          theme: theme,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -351,6 +492,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           icon: Icons.translate,
                           isSelected: language == AppLanguage.bengali,
                           onTap: () => localeNotifier.setLanguage(AppLanguage.bengali),
+                          theme: theme,
                         ),
                       ),
                     ],
@@ -364,7 +506,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _buildSectionHeader(Icons.badge_outlined, 'ACTIVE RECRUIT ENTRY BATCH'),
             Container(
               padding: const EdgeInsets.all(12),
-              color: AppColors.ledgerSurface,
+              decoration: BoxDecoration(
+                color: theme.cardBackground,
+                border: Border.all(color: theme.cardBorderLight),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -374,15 +519,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                           decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.ledgerBorder),
-                            color: Colors.white,
+                            border: Border.all(color: theme.cardBorder),
+                            color: theme.surface,
                           ),
                           child: DropdownButton<String>(
                             value: registerState.activeEntry,
                             isExpanded: true,
                             underline: const SizedBox(),
+                            dropdownColor: theme.cardBackground,
+                            style: TextStyle(color: theme.textPrimary, fontWeight: FontWeight.bold, fontSize: 12),
                             items: registerState.allEntries.map((e) {
-                              return DropdownMenuItem(value: e, child: Text('Entry $e'));
+                              return DropdownMenuItem(value: e, child: Text('Entry $e', style: TextStyle(color: theme.textPrimary)));
                             }).toList(),
                             onChanged: (val) {
                               if (val != null) {
@@ -414,7 +561,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _buildSectionHeader(Icons.shield_outlined, 'SQUADRON MANAGEMENT (ADD / REMOVE)'),
             Container(
               padding: const EdgeInsets.all(12),
-              color: AppColors.ledgerSurface,
+              decoration: BoxDecoration(
+                color: theme.cardBackground,
+                border: Border.all(color: theme.cardBorderLight),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -423,7 +573,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     children: [
                       Text(
                         'TOTAL SQUADRONS: ${squadrons.length}',
-                        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textPrimary),
                       ),
                       ElevatedButton.icon(
                         icon: const Icon(Icons.add, size: 14),
@@ -445,23 +595,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       final roomCount = structure.getRoomsForSquadron(sqn).length;
                       return Chip(
                         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-                        backgroundColor: sqn == activeSquadron ? AppColors.bafGold.withAlpha(50) : Colors.white,
+                        backgroundColor: sqn == activeSquadron ? AppColors.bafGold.withAlpha(50) : theme.surface,
                         side: BorderSide(
-                          color: sqn == activeSquadron ? AppColors.bafGold : AppColors.ledgerBorder,
+                          color: sqn == activeSquadron ? AppColors.bafGold : theme.cardBorder,
                           width: 1.2,
                         ),
-                        avatar: const Icon(Icons.shield, size: 14, color: AppColors.bafNavy),
-                        label: Text('$sqn ($roomCount Rooms)', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        avatar: const Icon(Icons.shield, size: 14, color: AppColors.bafGold),
+                        label: Text('$sqn ($roomCount Rooms)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: theme.textPrimary)),
                         deleteIcon: squadrons.length > 1
-                            ? const Icon(Icons.close, size: 14, color: AppColors.debitRed)
+                            ? Icon(Icons.close, size: 14, color: theme.debit)
                             : null,
                         onDeleted: squadrons.length > 1
-                            ? () async {
-                                final removed = await structureNotifier.removeSquadron(sqn);
-                                if (removed && registerState.selectedSquadron == sqn) {
-                                  final fallback = structure.squadrons.firstWhere((s) => s != sqn);
-                                  registerNotifier.setSelectedSquadron(fallback);
-                                }
+                            ? () {
+                                _confirmRemoveSquadron(context, ref, sqn, () async {
+                                  final removed = await structureNotifier.removeSquadron(sqn);
+                                  if (removed && registerState.selectedSquadron == sqn) {
+                                    final fallback = structure.squadrons.firstWhere((s) => s != sqn);
+                                    registerNotifier.setSelectedSquadron(fallback);
+                                  }
+                                });
                               }
                             : null,
                       );
@@ -476,27 +628,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _buildSectionHeader(Icons.meeting_room_outlined, 'ROOM MANAGEMENT (SEPARATE PER SQUADRON)'),
             Container(
               padding: const EdgeInsets.all(12),
-              color: AppColors.ledgerSurface,
+              decoration: BoxDecoration(
+                color: theme.cardBackground,
+                border: Border.all(color: theme.cardBorderLight),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Text('SQUADRON: ', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
+                      Text('SQUADRON: ', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textPrimary)),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                           decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.ledgerBorder),
-                            color: Colors.white,
+                            border: Border.all(color: theme.cardBorder),
+                            color: theme.surface,
                           ),
                           child: DropdownButton<String>(
                             value: activeSquadron,
                             isExpanded: true,
                             underline: const SizedBox(),
+                            dropdownColor: theme.cardBackground,
+                            style: TextStyle(color: theme.textPrimary, fontWeight: FontWeight.bold, fontSize: 12),
                             items: squadrons.map((sqn) {
-                              return DropdownMenuItem(value: sqn, child: Text('$sqn SQN'));
+                              return DropdownMenuItem(value: sqn, child: Text('$sqn SQN', style: TextStyle(color: theme.textPrimary)));
                             }).toList(),
                             onChanged: (val) {
                               if (val != null) {
@@ -522,7 +679,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   const SizedBox(height: 10),
                   Text(
                     'ROOMS IN $activeSquadron SQUADRON (${roomsForActiveSqn.length} Rooms):',
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textMuted),
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary),
                   ),
                   const SizedBox(height: 6),
                   Wrap(
@@ -531,14 +688,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     children: roomsForActiveSqn.map((room) {
                       return Chip(
                         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-                        backgroundColor: Colors.white,
-                        side: const BorderSide(color: AppColors.ledgerBorder),
-                        label: Text(room, style: const TextStyle(fontSize: 11)),
+                        backgroundColor: theme.surface,
+                        side: BorderSide(color: theme.cardBorder),
+                        label: Text(room, style: TextStyle(fontSize: 11, color: theme.textPrimary)),
                         deleteIcon: roomsForActiveSqn.length > 1
-                            ? const Icon(Icons.close, size: 12, color: AppColors.debitRed)
+                            ? Icon(Icons.close, size: 12, color: theme.debit)
                             : null,
                         onDeleted: roomsForActiveSqn.length > 1
-                            ? () => structureNotifier.removeRoom(activeSquadron, room)
+                            ? () {
+                                _confirmRemoveRoom(context, ref, activeSquadron, room, () {
+                                  structureNotifier.removeRoom(activeSquadron, room);
+                                });
+                              }
                             : null,
                       );
                     }).toList(),
@@ -552,7 +713,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _buildSectionHeader(Icons.person_pin, 'OPERATOR SESSION'),
             Container(
               padding: const EdgeInsets.all(12),
-              color: AppColors.ledgerSurface,
+              decoration: BoxDecoration(
+                color: theme.cardBackground,
+                border: Border.all(color: theme.cardBorderLight),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -570,11 +734,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           children: [
                             Text(
                               session.user?.name ?? 'Operator',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: theme.textPrimary),
                             ),
                             Text(
                               '${session.user?.rank ?? ''} • ${session.user?.role ?? 'NCOIC'} (${session.user?.bdNo ?? ''})',
-                              style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted),
+                              style: TextStyle(fontSize: 10.5, color: theme.textSecondary),
                             ),
                           ],
                         ),
@@ -593,13 +757,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   SizedBox(
                     height: 42,
                     child: OutlinedButton.icon(
-                      icon: const Icon(Icons.logout, size: 16, color: AppColors.debitRed),
-                      label: const Text(
+                      icon: Icon(Icons.logout, size: 16, color: theme.debit),
+                      label: Text(
                         'LOGOUT SESSION',
-                        style: TextStyle(color: AppColors.debitRed, fontWeight: FontWeight.w900, fontSize: 11.5),
+                        style: TextStyle(color: theme.debit, fontWeight: FontWeight.w900, fontSize: 11.5),
                       ),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.debitRed, width: 1.2),
+                        side: BorderSide(color: theme.debit, width: 1.2),
                         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
                       ),
                       onPressed: () => _confirmLogout(context, ref),
@@ -611,10 +775,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 24),
 
             // Footer
-            const Center(
+            Center(
               child: Text(
                 'BAF RTS Food Canteen System v1.1.0 • Tactical Ledger',
-                style: TextStyle(fontSize: 9.5, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 9.5, color: theme.textSecondary),
               ),
             ),
             const SizedBox(height: 20),
@@ -651,15 +815,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     required IconData icon,
     required bool isSelected,
     required VoidCallback onTap,
+    required CanteenThemeColors theme,
   }) {
     return InkWell(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.bafNavy : Colors.white,
+          color: isSelected ? AppColors.bafNavy : theme.surface,
           border: Border.all(
-            color: isSelected ? AppColors.bafGold : AppColors.ledgerBorder,
+            color: isSelected ? AppColors.bafGold : theme.cardBorder,
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -670,7 +835,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Icon(
               icon,
               size: 13,
-              color: isSelected ? AppColors.bafGold : AppColors.textMuted,
+              color: isSelected ? AppColors.bafGold : theme.textSecondary,
             ),
             const SizedBox(width: 4),
             Text(
@@ -678,7 +843,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               style: TextStyle(
                 fontSize: 10.5,
                 fontWeight: FontWeight.bold,
-                color: isSelected ? AppColors.bafGold : AppColors.textPrimary,
+                color: isSelected ? AppColors.bafGold : theme.textPrimary,
               ),
             ),
           ],

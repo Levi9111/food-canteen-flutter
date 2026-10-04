@@ -26,6 +26,7 @@ class RtsBottomNavBar extends StatelessWidget {
         data: NavigationBarThemeData(
           backgroundColor: AppColors.bafNavy,
           indicatorColor: AppColors.bafGold,
+          indicatorShape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
           elevation: 0,
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
             final isSelected = states.contains(WidgetState.selected);
