@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/canteen_theme_extension.dart';
 import '../../../../core/widgets/baf_rts_crest.dart';
+import '../../../../core/widgets/canteen_calculator_dialog.dart';
+import '../../../../core/widgets/modal_action_bar.dart';
 import '../../models/p_staff_models.dart';
 import '../../providers/p_staff_register_provider.dart';
 import '../../services/p_staff_pdf_export_service.dart';
@@ -17,6 +19,217 @@ class PStaffSpreadsheetView extends ConsumerStatefulWidget {
 
 class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
   bool _isGeneratingPdf = false;
+
+  void _showRecordPaymentDialog(
+    BuildContext context,
+    PStaffProfile staff,
+  ) {
+    final theme = context.canteenTheme;
+    final amountController = TextEditingController();
+    final noteController = TextEditingController();
+    DateTime paymentDate = DateTime.now();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+            return Padding(
+              padding: EdgeInsets.only(bottom: bottomInset),
+              child: Center(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 460),
+                  decoration: BoxDecoration(
+                    color: theme.surface,
+                    border: Border.all(color: AppColors.bafNavy, width: 2),
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          color: AppColors.bafNavy,
+                          child: Row(
+                            children: [
+                              const Icon(Icons.payments_outlined, color: AppColors.bafGold, size: 18),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'LOG PAYMENT • ${staff.rank} ${staff.name} (${staff.bdNo})',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                                visualDensity: VisualDensity.compact,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                onPressed: () => Navigator.of(ctx).pop(),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'PAYMENT DATE *',
+                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary),
+                              ),
+                              const SizedBox(height: 4),
+                              InkWell(
+                                onTap: () async {
+                                  final picked = await showDatePicker(
+                                    context: ctx,
+                                    initialDate: paymentDate,
+                                    firstDate: DateTime(2024),
+                                    lastDate: DateTime(2030),
+                                  );
+                                  if (picked != null) {
+                                    setModalState(() => paymentDate = picked);
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: theme.cardBackground,
+                                    border: Border.all(color: theme.cardBorder),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.calendar_month, size: 14, color: theme.accentGold),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        DateFormat('dd MMMM yyyy').format(paymentDate),
+                                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.textPrimary),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'AMOUNT RECEIVED (TK) *',
+                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary),
+                                  ),
+                                  InkWell(
+                                    onTap: () async {
+                                      final cur = double.tryParse(amountController.text.trim());
+                                      final calcResult = await showCanteenCalculator(
+                                        context,
+                                        initialValue: cur,
+                                      );
+                                      if (calcResult != null) {
+                                        amountController.text = calcResult.toStringAsFixed(2);
+                                      }
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.bafNavy,
+                                        border: Border.all(color: AppColors.bafGold),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.calculate_outlined, color: AppColors.bafGold, size: 14),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            'CALCULATOR',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.bafGold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              TextField(
+                                controller: amountController,
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                autofocus: true,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.credit,
+                                ),
+                                decoration: const InputDecoration(
+                                  prefixText: '৳ ',
+                                  hintText: '0.00',
+                                  isDense: true,
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              Text(
+                                'RECEIPT / NOTE / REMARKS',
+                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary),
+                              ),
+                              const SizedBox(height: 4),
+                              TextField(
+                                controller: noteController,
+                                decoration: const InputDecoration(
+                                  hintText: 'e.g. Cash payment on salary day, partial settlement',
+                                  isDense: true,
+                                ),
+                              ),
+                              const SizedBox(height: 18),
+                              ModalActionBar(
+                                cancelLabel: 'CANCEL',
+                                confirmLabel: 'SAVE PAYMENT',
+                                onCancel: () => Navigator.of(ctx).pop(),
+                                onConfirm: () async {
+                                  final amt = double.tryParse(amountController.text.trim()) ?? 0.0;
+                                  if (amt <= 0) return;
+                                  await ref.read(pStaffRegisterProvider.notifier).recordStaffPayment(
+                                    staffId: staff.id,
+                                    amount: amt,
+                                    date: paymentDate,
+                                    receiptNote: noteController.text.trim().isEmpty ? null : noteController.text.trim(),
+                                  );
+                                  if (ctx.mounted) {
+                                    Navigator.of(ctx).pop();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Payment logged: ${staff.name} • ৳ ${amt.toStringAsFixed(2)}'),
+                                        backgroundColor: AppColors.cleared,
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   Future<void> _handleDownloadPdf(
     BuildContext context,
@@ -212,7 +425,21 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
                       ),
                     ),
 
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
+
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.add_card, size: 13),
+                      label: const Text('+ LOG PAYMENT'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.credit,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                        textStyle: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold),
+                      ),
+                      onPressed: () => _showRecordPaymentDialog(context, currentStaff),
+                    ),
+
+                    const SizedBox(width: 8),
 
                     ElevatedButton.icon(
                       icon: _isGeneratingPdf
@@ -259,10 +486,10 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
                     child: _buildHeaderMetric('MONTH SPEND', '৳ ${currencyFormat.format(summary.totalMonthlySpending)}', Colors.white),
                   ),
                   Expanded(
-                    child: _buildHeaderMetric('PAID', '৳ ${currencyFormat.format(summary.paid)}', Colors.greenAccent),
+                    child: _buildHeaderMetric('PAID RANDOM', '৳ ${currencyFormat.format(summary.paid)}', Colors.greenAccent),
                   ),
                   Expanded(
-                    child: _buildHeaderMetric('NET DUE', '৳ ${currencyFormat.format(summary.netDue)}', AppColors.bafGold),
+                    child: _buildHeaderMetric('EFFECTIVE BILL', '৳ ${currencyFormat.format(summary.effectiveBill)}', AppColors.bafGold),
                   ),
                 ],
               ),
@@ -332,7 +559,7 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
                           ),
                         ),
 
-                        // Table - Wrapped in horizontal scroll for mobile
+                        // Table - Wrapped in horizontal scroll for mobile (ITEMS CONSUMED REMOVED)
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: SizedBox(
@@ -341,12 +568,11 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
                               border: TableBorder.all(color: theme.cardBorder, width: 0.8),
                               columnWidths: const {
                                 0: FixedColumnWidth(48),
-                                1: FixedColumnWidth(95),
-                                2: FixedColumnWidth(85),
-                                3: FlexColumnWidth(2.5),
-                                4: FixedColumnWidth(95),
-                                5: FixedColumnWidth(65),
-                                6: FixedColumnWidth(95),
+                                1: FixedColumnWidth(105),
+                                2: FixedColumnWidth(95),
+                                3: FlexColumnWidth(2.2),
+                                4: FixedColumnWidth(105),
+                                5: FixedColumnWidth(110),
                               },
                               defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                               children: [
@@ -356,10 +582,9 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
                                     _buildCell('DAY', isHeader: true, align: TextAlign.center, theme: theme),
                                     _buildCell('DATE', isHeader: true, theme: theme),
                                     _buildCell('WEEKDAY', isHeader: true, theme: theme),
-                                    _buildCell('ITEMS CONSUMED / PARTICULARS', isHeader: true, theme: theme),
+                                    _buildCell('DUTY IN-CHARGE', isHeader: true, theme: theme),
+                                    _buildCell('STAFF VERIFICATION', isHeader: true, align: TextAlign.center, theme: theme),
                                     _buildCell('PRICE (TK)', isHeader: true, align: TextAlign.right, theme: theme),
-                                    _buildCell('DUTY', isHeader: true, align: TextAlign.center, theme: theme),
-                                    _buildCell('STAFF SIGN', isHeader: true, align: TextAlign.center, theme: theme),
                                   ],
                                 ),
                                 ...summary.days.map((record) {
@@ -386,8 +611,14 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
                                         theme: theme,
                                       ),
                                       _buildCell(
-                                        record.particulars ?? (hasSpending ? 'Tea & canteen refreshments' : '—'),
+                                        hasSpending ? record.recordedBy : '—',
                                         color: hasSpending ? theme.textPrimary : theme.textSecondary,
+                                        theme: theme,
+                                      ),
+                                      _buildCell(
+                                        hasSpending ? 'Recorded' : '—',
+                                        align: TextAlign.center,
+                                        color: hasSpending ? theme.credit : theme.textSecondary,
                                         theme: theme,
                                       ),
                                       _buildCell(
@@ -395,18 +626,6 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
                                         align: TextAlign.right,
                                         isBold: hasSpending,
                                         color: hasSpending ? theme.debit : theme.textSecondary,
-                                        theme: theme,
-                                      ),
-                                      _buildCell(
-                                        hasSpending ? record.recordedBy : '—',
-                                        align: TextAlign.center,
-                                        color: hasSpending ? theme.textPrimary : theme.textSecondary,
-                                        theme: theme,
-                                      ),
-                                      _buildCell(
-                                        hasSpending ? 'Verified' : '—',
-                                        align: TextAlign.center,
-                                        color: hasSpending ? theme.credit : theme.textSecondary,
                                         theme: theme,
                                       ),
                                     ],
@@ -420,10 +639,9 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
                                     _buildCell('', isHeader: true, theme: theme),
                                     _buildCell('1. MONTH TOTAL', isHeader: true, isBold: true, theme: theme),
                                     _buildCell('', isHeader: true, theme: theme),
-                                    _buildCell('CURRENT MONTH SPENDING', isHeader: true, isBold: true, theme: theme),
-                                    _buildCell('৳ ${currencyFormat.format(summary.totalMonthlySpending)}', isHeader: true, align: TextAlign.right, isBold: true, color: AppColors.bafGold, theme: theme),
-                                    _buildCell('LOGGED', isHeader: true, align: TextAlign.center, theme: theme),
+                                    _buildCell('CURRENT MONTH TOTAL PRICE', isHeader: true, isBold: true, theme: theme),
                                     _buildCell('AUDITED', isHeader: true, align: TextAlign.center, theme: theme),
+                                    _buildCell('৳ ${currencyFormat.format(summary.totalMonthlySpending)}', isHeader: true, align: TextAlign.right, isBold: true, color: AppColors.bafGold, theme: theme),
                                   ],
                                 ),
 
@@ -435,9 +653,8 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
                                     _buildCell('2. PREVIOUS DUE', isBold: true, color: AppColors.balanceAlert, theme: theme),
                                     _buildCell('', theme: theme),
                                     _buildCell('ARREARS BROUGHT FORWARD', isBold: true, color: theme.textSecondary, theme: theme),
-                                    _buildCell('৳ ${currencyFormat.format(summary.preDue)}', align: TextAlign.right, isBold: true, color: AppColors.balanceAlert, theme: theme),
-                                    _buildCell('BROUGHT FWD', align: TextAlign.center, theme: theme),
                                     _buildCell('CONFIRMED', align: TextAlign.center, theme: theme),
+                                    _buildCell('৳ ${currencyFormat.format(summary.preDue)}', align: TextAlign.right, isBold: true, color: AppColors.balanceAlert, theme: theme),
                                   ],
                                 ),
 
@@ -446,12 +663,11 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
                                   decoration: const BoxDecoration(color: AppColors.bafNavy),
                                   children: [
                                     _buildCell('', isHeader: true, theme: theme),
-                                    _buildCell('3. GRAND TOTAL', isHeader: true, isBold: true, theme: theme),
+                                    _buildCell('3. GROSS TOTAL', isHeader: true, isBold: true, theme: theme),
                                     _buildCell('', isHeader: true, theme: theme),
                                     _buildCell('GROSS LIABILITY (PRE DUE + MONTH)', isHeader: true, isBold: true, theme: theme),
+                                    _buildCell('VERIFIED', isHeader: true, align: TextAlign.center, theme: theme),
                                     _buildCell('৳ ${currencyFormat.format(summary.grandTotal)}', isHeader: true, align: TextAlign.right, isBold: true, color: AppColors.bafGold, theme: theme),
-                                    _buildCell('VERIFIED', isHeader: true, align: TextAlign.center, theme: theme),
-                                    _buildCell('VERIFIED', isHeader: true, align: TextAlign.center, theme: theme),
                                   ],
                                 ),
 
@@ -462,28 +678,117 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
                                     _buildCell('', theme: theme),
                                     _buildCell('4. LESS: PAID', isBold: true, color: theme.credit, theme: theme),
                                     _buildCell('', theme: theme),
-                                    _buildCell('CASH RECEIVED FROM STAFF', isBold: true, color: theme.credit, theme: theme),
-                                    _buildCell('৳ ${currencyFormat.format(summary.paid)}', align: TextAlign.right, isBold: true, color: theme.credit, theme: theme),
-                                    _buildCell('COLLECTED', align: TextAlign.center, theme: theme),
+                                    _buildCell('TOTAL RANDOM PAYMENTS RECEIVED', isBold: true, color: theme.credit, theme: theme),
                                     _buildCell('RECEIPTED', align: TextAlign.center, theme: theme),
+                                    _buildCell('৳ ${currencyFormat.format(summary.paid)}', align: TextAlign.right, isBold: true, color: theme.credit, theme: theme),
                                   ],
                                 ),
 
-                                // Subtotal 5: Net Due
+                                // Subtotal 5: Effective Bill
                                 TableRow(
                                   decoration: const BoxDecoration(color: AppColors.bafNavy),
                                   children: [
                                     _buildCell('', isHeader: true, theme: theme),
-                                    _buildCell('5. NET CLOSING DUE', isHeader: true, isBold: true, theme: theme),
+                                    _buildCell('5. EFFECTIVE BILL', isHeader: true, isBold: true, theme: theme),
                                     _buildCell('', isHeader: true, theme: theme),
-                                    _buildCell('OUTSTANDING BALANCE AT MONTH END', isHeader: true, isBold: true, theme: theme),
-                                    _buildCell('৳ ${currencyFormat.format(summary.netDue)}', isHeader: true, align: TextAlign.right, isBold: true, color: summary.netDue > 0 ? Colors.amberAccent : Colors.greenAccent, theme: theme),
-                                    _buildCell('FINAL', isHeader: true, align: TextAlign.center, theme: theme),
-                                    _buildCell(summary.netDue <= 0 ? 'CLEARED' : 'PENDING', isHeader: true, align: TextAlign.center, theme: theme),
+                                    _buildCell('NET EFFECTIVE BILL AT MONTH END', isHeader: true, isBold: true, theme: theme),
+                                    _buildCell(summary.effectiveBill <= 0 ? 'CLEARED' : 'PENDING', isHeader: true, align: TextAlign.center, theme: theme),
+                                    _buildCell('৳ ${currencyFormat.format(summary.effectiveBill)}', isHeader: true, align: TextAlign.right, isBold: true, color: summary.effectiveBill > 0 ? Colors.amberAccent : Colors.greenAccent, theme: theme),
                                   ],
                                 ),
                               ],
                             ),
+                          ),
+                        ),
+
+                        // Section 2: Random Payments with Dates List
+                        Container(
+                          margin: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: theme.surface,
+                            border: Border.all(color: theme.cardBorder),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                color: AppColors.bafNavy,
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.payments_outlined, color: AppColors.bafGold, size: 16),
+                                    const SizedBox(width: 8),
+                                    const Expanded(
+                                      child: Text(
+                                        'RANDOM PAYMENTS LOGGED (SHOWING DATES & PRICES)',
+                                        style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    InkWell(
+                                      onTap: () => _showRecordPaymentDialog(context, currentStaff),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        color: AppColors.bafGold,
+                                        child: const Text(
+                                          '+ LOG PAYMENT',
+                                          style: TextStyle(color: AppColors.bafNavy, fontSize: 9.5, fontWeight: FontWeight.w900),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (summary.payments.isEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Text(
+                                    'No random payment logged for this month. Effective bill equals gross balance.',
+                                    style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: theme.textSecondary),
+                                  ),
+                                )
+                              else
+                                ListView.separated(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: summary.payments.length,
+                                  separatorBuilder: (context, index) => Divider(height: 1, color: theme.cardBorderLight),
+                                  itemBuilder: (ctx, idx) {
+                                    final p = summary.payments[idx];
+                                    return ListTile(
+                                      dense: true,
+                                      visualDensity: VisualDensity.compact,
+                                      leading: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        color: theme.tableHighlight,
+                                        child: Text(
+                                          DateFormat('dd MMM yyyy').format(p.date),
+                                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textPrimary),
+                                        ),
+                                      ),
+                                      title: Text(
+                                        p.receiptNote ?? 'Random payment deposit',
+                                        style: TextStyle(fontSize: 11, color: theme.textPrimary),
+                                      ),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            '৳ ${currencyFormat.format(p.amount)}',
+                                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: theme.credit),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          IconButton(
+                                            icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.debitRed),
+                                            onPressed: () {
+                                              ref.read(pStaffRegisterProvider.notifier).deleteStaffPayment(currentStaff.id, p.id);
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                            ],
                           ),
                         ),
 
