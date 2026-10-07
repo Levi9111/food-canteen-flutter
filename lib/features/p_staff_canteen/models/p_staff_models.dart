@@ -1,3 +1,35 @@
+class StaffPayment {
+  final String id;
+  final String staffId;
+  final DateTime date;
+  final double amount;
+  final String? receiptNote;
+
+  const StaffPayment({
+    required this.id,
+    required this.staffId,
+    required this.date,
+    required this.amount,
+    this.receiptNote,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'staffId': staffId,
+    'date': date.toIso8601String(),
+    'amount': amount,
+    'receiptNote': receiptNote,
+  };
+
+  factory StaffPayment.fromJson(Map<String, dynamic> json) => StaffPayment(
+    id: json['id'] as String,
+    staffId: json['staffId'] as String,
+    date: DateTime.parse(json['date'] as String),
+    amount: (json['amount'] as num).toDouble(),
+    receiptNote: json['receiptNote'] as String?,
+  );
+}
+
 class PStaffProfile {
   final String id;
   final String name;
@@ -6,6 +38,7 @@ class PStaffProfile {
   final String office;
   final double preDue;
   final double paid;
+  final List<StaffPayment> payments;
 
   const PStaffProfile({
     required this.id,
@@ -15,6 +48,7 @@ class PStaffProfile {
     required this.office,
     this.preDue = 0.0,
     this.paid = 0.0,
+    this.payments = const [],
   });
 
   PStaffProfile copyWith({
@@ -25,6 +59,7 @@ class PStaffProfile {
     String? office,
     double? preDue,
     double? paid,
+    List<StaffPayment>? payments,
   }) {
     return PStaffProfile(
       id: id ?? this.id,
@@ -34,6 +69,7 @@ class PStaffProfile {
       office: office ?? this.office,
       preDue: preDue ?? this.preDue,
       paid: paid ?? this.paid,
+      payments: payments ?? this.payments,
     );
   }
 
@@ -45,6 +81,7 @@ class PStaffProfile {
     'office': office,
     'preDue': preDue,
     'paid': paid,
+    'payments': payments.map((p) => p.toJson()).toList(),
   };
 
   factory PStaffProfile.fromJson(Map<String, dynamic> json) => PStaffProfile(
@@ -55,6 +92,10 @@ class PStaffProfile {
     office: json['office'] as String,
     preDue: (json['preDue'] as num?)?.toDouble() ?? 0.0,
     paid: (json['paid'] as num?)?.toDouble() ?? 0.0,
+    payments: (json['payments'] as List<dynamic>?)
+            ?.map((e) => StaffPayment.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        const [],
   );
 }
 
@@ -131,6 +172,7 @@ class StaffMonthlySummary {
   final int year;
   final int month;
   final List<StaffDailyRecord> days;
+  final List<StaffPayment> payments;
   final double totalMonthlySpending;
   final double preDue;
   final double grandTotal;
@@ -143,6 +185,7 @@ class StaffMonthlySummary {
     required this.year,
     required this.month,
     required this.days,
+    this.payments = const [],
     required this.totalMonthlySpending,
     required this.preDue,
     required this.grandTotal,
@@ -150,4 +193,6 @@ class StaffMonthlySummary {
     required this.netDue,
     required this.activeDaysCount,
   });
+
+  double get effectiveBill => netDue;
 }

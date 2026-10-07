@@ -160,18 +160,22 @@ class PStaffRegisterState {
       );
     }
 
+    final monthPayments = staff.payments.where((p) => p.date.year == year && p.date.month == month).toList();
+    final monthPaymentsTotal = monthPayments.fold(0.0, (sum, p) => sum + p.amount);
+    final effectivePaid = monthPaymentsTotal > 0 ? monthPaymentsTotal : staff.paid;
     final grandTotal = staff.preDue + monthlySpending;
-    final netDue = grandTotal - staff.paid;
+    final netDue = grandTotal - effectivePaid;
 
     return StaffMonthlySummary(
       staff: staff,
       year: year,
       month: month,
       days: records,
+      payments: monthPayments,
       totalMonthlySpending: monthlySpending,
       preDue: staff.preDue,
       grandTotal: grandTotal,
-      paid: staff.paid,
+      paid: effectivePaid,
       netDue: netDue,
       activeDaysCount: activeDays,
     );
@@ -447,6 +451,50 @@ class PStaffRegisterNotifier extends Notifier<PStaffRegisterState> {
     }
 
     state = state.copyWith(expenses: updatedExpenses);
+    await _saveToStorage();
+  }
+
+  Future<void> recordStaffPayment({
+    required String staffId,
+    required double amount,
+    DateTime? date,
+    String? receiptNote,
+  }) async {
+    final staff = state.getStaffById(staffId);
+    if (staff == null || amount <= 0) return;
+
+    final newPayment = StaffPayment(
+      id: 'pay_${DateTime.now().millisecondsSinceEpoch}',
+      staffId: staffId,
+      date: date ?? DateTime.now(),
+      amount: amount,
+      receiptNote: receiptNote,
+    );
+
+    final updated = state.staffProfiles.map((s) {
+      if (s.id == staffId) {
+        final newPayments = [...s.payments, newPayment];
+        final totalPaid = newPayments.fold(0.0, (sum, p) => sum + p.amount);
+        return s.copyWith(payments: newPayments, paid: totalPaid);
+      }
+      return s;
+    }).toList();
+
+    state = state.copyWith(staffProfiles: updated);
+    await _saveToStorage();
+  }
+
+  Future<void> deleteStaffPayment(String staffId, String paymentId) async {
+    final updated = state.staffProfiles.map((s) {
+      if (s.id == staffId) {
+        final newPayments = s.payments.where((p) => p.id != paymentId).toList();
+        final totalPaid = newPayments.fold(0.0, (sum, p) => sum + p.amount);
+        return s.copyWith(payments: newPayments, paid: totalPaid);
+      }
+      return s;
+    }).toList();
+
+    state = state.copyWith(staffProfiles: updated);
     await _saveToStorage();
   }
 }
