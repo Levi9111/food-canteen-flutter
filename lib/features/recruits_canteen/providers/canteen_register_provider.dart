@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/network/api_client.dart';
+import '../../../core/network/api_endpoints.dart';
 import '../constants/canteen_constants.dart';
 import '../models/daily_room_expense.dart';
 import '../models/room_monthly_summary.dart';
@@ -280,6 +282,42 @@ class CanteenRegisterNotifier extends Notifier<CanteenRegisterState> {
         state = state.copyWith(expenses: _generateDemoRecords());
       }
     }
+
+    _syncEntriesWithServer();
+  }
+
+  Future<void> _syncEntriesWithServer() async {
+    try {
+      final dio = ref.read(dioProvider);
+      final response = await dio.get(ApiEndpoints.entries);
+      if (_disposed) return;
+      if (response.statusCode == 200 && response.data != null) {
+        final resData = response.data as Map<String, dynamic>;
+        final data = resData['data'] as List?;
+        if (data != null && data.isNotEmpty) {
+          final List<String> serverEntries = [];
+          String? activeServerEntry;
+          for (final item in data) {
+            final m = item as Map<String, dynamic>;
+            final eNo = m['entryNo']?.toString();
+            if (eNo != null && eNo.isNotEmpty) {
+              serverEntries.add(eNo);
+              if (m['status'] == 'ACTIVE' && activeServerEntry == null) {
+                activeServerEntry = eNo;
+              }
+            }
+          }
+          if (_disposed) return;
+          state = state.copyWith(
+            allEntries: serverEntries.isNotEmpty ? serverEntries : state.allEntries,
+            activeEntry: activeServerEntry ?? state.activeEntry,
+          );
+          await _saveToPrefs();
+        }
+      }
+    } catch (_) {
+      // Retain offline state
+    }
   }
 
   Future<void> _saveToPrefs() async {
@@ -302,6 +340,25 @@ class CanteenRegisterNotifier extends Notifier<CanteenRegisterState> {
   void setActiveEntry(String entry) {
     state = state.copyWith(activeEntry: entry);
     _saveToPrefs();
+
+    // Async sync to server database
+    () async {
+      try {
+        final dio = ref.read(dioProvider);
+        final res = await dio.get(ApiEndpoints.entries);
+        if (res.statusCode == 200 && res.data != null) {
+          final resData = res.data as Map<String, dynamic>;
+          final list = resData['data'] as List?;
+          final target = list?.firstWhere(
+            (e) => (e as Map<String, dynamic>)['entryNo'] == entry,
+            orElse: () => null,
+          );
+          if (target != null && target['_id'] != null) {
+            await dio.patch(ApiEndpoints.activateEntry(target['_id'].toString()));
+          }
+        }
+      } catch (_) {}
+    }();
   }
 
   void addNewEntry(String newEntry) {
@@ -310,6 +367,20 @@ class CanteenRegisterNotifier extends Notifier<CanteenRegisterState> {
     final updated = [trimmed, ...state.allEntries];
     state = state.copyWith(allEntries: updated, activeEntry: trimmed);
     _saveToPrefs();
+
+    // Async sync to server database
+    () async {
+      try {
+        final dio = ref.read(dioProvider);
+        await dio.post(
+          ApiEndpoints.entries,
+          data: {
+            'entryNo': trimmed,
+            'status': 'ACTIVE',
+          },
+        );
+      } catch (_) {}
+    }();
   }
 
   void setActiveManager(String manager) {
