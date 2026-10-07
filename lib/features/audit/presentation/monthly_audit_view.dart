@@ -6,10 +6,73 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/canteen_theme_extension.dart';
 import '../../../../core/widgets/baf_rts_crest.dart';
+import '../models/monthly_audit_statement.dart';
 import '../providers/audit_provider.dart';
+import '../services/audit_pdf_export_service.dart';
 
 class MonthlyAuditView extends ConsumerWidget {
   const MonthlyAuditView({super.key});
+
+  Future<void> _handleDownloadPdf(BuildContext context, MonthlyAuditStatement audit) async {
+    try {
+      final pdfBytes = await AuditPdfExportService.generateAuditPdf(audit: audit);
+      final periodClean = audit.period.replaceAll(' ', '_');
+      final filename = 'BAF_RTS_Audit_Statement_$periodClean.pdf';
+      final filePath = await AuditPdfExportService.downloadPdfToDevice(
+        pdfBytes: pdfBytes,
+        filename: filename,
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.bafNavy,
+            duration: const Duration(seconds: 5),
+            content: Row(
+              children: [
+                const Icon(Icons.download_done, color: AppColors.bafGold, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'AUDIT PDF DOWNLOAD COMPLETE',
+                        style: TextStyle(color: AppColors.bafGold, fontWeight: FontWeight.bold, fontSize: 11),
+                      ),
+                      Text(
+                        'Saved: $filePath',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white, fontSize: 10),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            action: SnackBarAction(
+              label: 'SHARE',
+              textColor: AppColors.bafGold,
+              onPressed: () {
+                AuditPdfExportService.shareOrOpenPdf(pdfBytes: pdfBytes, filename: filename);
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.debitRed,
+            content: Text('Failed to download audit PDF: $e'),
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -102,21 +165,14 @@ class MonthlyAuditView extends ConsumerWidget {
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton.icon(
-                              icon: const Icon(Icons.print_outlined, size: 15),
-                              label: const Text('PRINT STATEMENT'),
+                              icon: const Icon(Icons.picture_as_pdf, size: 15),
+                              label: const Text('DOWNLOAD PDF'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.bafGold,
                                 foregroundColor: AppColors.bafNavy,
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               ),
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Audit statement compiled and sent to system printer spool.'),
-                                    backgroundColor: AppColors.bafDeepBlue,
-                                  ),
-                                );
-                              },
+                              onPressed: () => _handleDownloadPdf(context, audit),
                             ),
                           ),
                         ],
@@ -167,21 +223,14 @@ class MonthlyAuditView extends ConsumerWidget {
                             ),
                           ),
                           ElevatedButton.icon(
-                            icon: const Icon(Icons.print_outlined, size: 16),
-                            label: const Text('PRINT STATEMENT'),
+                            icon: const Icon(Icons.picture_as_pdf, size: 16),
+                            label: const Text('DOWNLOAD PDF'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.bafGold,
                               foregroundColor: AppColors.bafNavy,
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                             ),
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Audit statement compiled and sent to system printer spool.'),
-                                  backgroundColor: AppColors.bafDeepBlue,
-                                ),
-                              );
-                            },
+                            onPressed: () => _handleDownloadPdf(context, audit),
                           ),
                         ],
                       ),
