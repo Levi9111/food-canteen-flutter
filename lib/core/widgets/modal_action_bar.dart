@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../theme/canteen_theme_extension.dart';
 
 /// Standard military-styled action bar for dialogs and modals.
 /// Guarantees perfectly matched, even-sized buttons that never overflow.
@@ -13,6 +14,7 @@ class ModalActionBar extends StatelessWidget {
   final bool isConfirmLoading;
   final Color confirmColor;
   final Color confirmTextColor;
+  final Color? cancelTextColor;
 
   const ModalActionBar({
     super.key,
@@ -25,10 +27,14 @@ class ModalActionBar extends StatelessWidget {
     this.isConfirmLoading = false,
     this.confirmColor = AppColors.bafNavy,
     this.confirmTextColor = AppColors.bafGold,
+    this.cancelTextColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.canteenTheme;
+    final resolvedCancelColor = cancelTextColor ?? theme.textPrimary;
+
     return Row(
       children: [
         // Cancel Button (Even 50% width)
@@ -37,21 +43,22 @@ class ModalActionBar extends StatelessWidget {
             height: 44,
             child: OutlinedButton.icon(
               onPressed: onCancel,
-              icon: Icon(cancelIcon, size: 16),
+              icon: Icon(cancelIcon, size: 16, color: resolvedCancelColor),
               label: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
                   cancelLabel,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.5,
+                    color: resolvedCancelColor,
                   ),
                 ),
               ),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.textPrimary,
-                side: const BorderSide(color: AppColors.ledgerBorder, width: 1.2),
+                foregroundColor: resolvedCancelColor,
+                side: BorderSide(color: theme.cardBorder, width: 1.2),
                 shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
                 padding: const EdgeInsets.symmetric(horizontal: 10),
               ),
