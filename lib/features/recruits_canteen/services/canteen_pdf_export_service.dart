@@ -169,11 +169,11 @@ class CanteenPdfExportService {
                 border: pw.TableBorder.all(color: borderGrey, width: 0.5),
                 columnWidths: const {
                   0: pw.FixedColumnWidth(28), // Day #
-                  1: pw.FixedColumnWidth(62), // Date
-                  2: pw.FlexColumnWidth(3.0), // Items Picked
-                  3: pw.FixedColumnWidth(70), // Price
-                  4: pw.FixedColumnWidth(55), // Duty In-charge
-                  5: pw.FixedColumnWidth(70), // Rep Sign
+                  1: pw.FixedColumnWidth(65), // Date
+                  2: pw.FixedColumnWidth(65), // Weekday
+                  3: pw.FlexColumnWidth(2.5), // Duty In-charge
+                  4: pw.FixedColumnWidth(65), // Rep Sign
+                  5: pw.FixedColumnWidth(70), // Price
                 },
                 children: [
                   // Table Header
@@ -182,10 +182,10 @@ class CanteenPdfExportService {
                     children: [
                       _buildPdfCell('DAY', isHeader: true, align: pw.TextAlign.center),
                       _buildPdfCell('DATE', isHeader: true, align: pw.TextAlign.center),
-                      _buildPdfCell('ITEMS PICKED / PARTICULARS', isHeader: true),
-                      _buildPdfCell('PRICE (TK)', isHeader: true, align: pw.TextAlign.right),
-                      _buildPdfCell('DUTY', isHeader: true, align: pw.TextAlign.center),
+                      _buildPdfCell('WEEKDAY', isHeader: true, align: pw.TextAlign.center),
+                      _buildPdfCell('DUTY IN-CHARGE', isHeader: true),
                       _buildPdfCell('REP SIGN', isHeader: true, align: pw.TextAlign.center),
+                      _buildPdfCell('PRICE (TK)', isHeader: true, align: pw.TextAlign.right),
                     ],
                   ),
 
@@ -212,9 +212,19 @@ class CanteenPdfExportService {
                           fontSize: 7.5,
                         ),
                         _buildPdfCell(
-                          record.itemsDescription ?? (hasSpent ? 'Canteen refreshments' : '—'),
-                          fontSize: 8,
+                          DateFormat('EEEE').format(record.date),
+                          align: pw.TextAlign.center,
+                          fontSize: 7.5,
+                        ),
+                        _buildPdfCell(
+                          hasSpent ? record.recordedBy : '—',
+                          fontSize: 7.5,
                           color: hasSpent ? PdfColors.black : PdfColors.grey700,
+                        ),
+                        _buildPdfCell(
+                          hasSpent ? (record.representativeName ?? 'Present') : '—',
+                          align: pw.TextAlign.center,
+                          fontSize: 7.5,
                         ),
                         _buildPdfCell(
                           hasSpent ? 'Tk ${currencyFormat.format(record.amount)}' : '—',
@@ -222,16 +232,6 @@ class CanteenPdfExportService {
                           isBold: hasSpent,
                           fontSize: 8,
                           color: hasSpent ? redDebit : PdfColors.grey600,
-                        ),
-                        _buildPdfCell(
-                          hasSpent ? record.recordedBy : '—',
-                          align: pw.TextAlign.center,
-                          fontSize: 7.5,
-                        ),
-                        _buildPdfCell(
-                          hasSpent ? (record.representativeName ?? 'Present') : '—',
-                          align: pw.TextAlign.center,
-                          fontSize: 7.5,
                         ),
                       ],
                     );
@@ -243,10 +243,10 @@ class CanteenPdfExportService {
                     children: [
                       _buildPdfCell(''),
                       _buildPdfCell('1. MONTH TOTAL', isBold: true, fontSize: 8),
-                      _buildPdfCell('Current month canteen consumption', fontSize: 7.5),
-                      _buildPdfCell('Tk ${currencyFormat.format(summary.totalMonthlySpending)}', align: pw.TextAlign.right, isBold: true, fontSize: 8.5),
-                      _buildPdfCell('LOGGED', align: pw.TextAlign.center, fontSize: 7),
+                      _buildPdfCell(''),
+                      _buildPdfCell('Current month room price total', fontSize: 7.5),
                       _buildPdfCell('AUDITED', align: pw.TextAlign.center, fontSize: 7),
+                      _buildPdfCell('Tk ${currencyFormat.format(summary.totalMonthlySpending)}', align: pw.TextAlign.right, isBold: true, fontSize: 8.5),
                     ],
                   ),
 
@@ -256,10 +256,10 @@ class CanteenPdfExportService {
                     children: [
                       _buildPdfCell(''),
                       _buildPdfCell('2. PREVIOUS DUE', isBold: true, fontSize: 8, color: redDebit),
+                      _buildPdfCell(''),
                       _buildPdfCell('Carried over from prior audit period', fontSize: 7.5),
-                      _buildPdfCell('Tk ${currencyFormat.format(summary.preDue)}', align: pw.TextAlign.right, isBold: true, fontSize: 8.5, color: redDebit),
-                      _buildPdfCell('BROUGHT FWD', align: pw.TextAlign.center, fontSize: 7),
                       _buildPdfCell('CONFIRMED', align: pw.TextAlign.center, fontSize: 7),
+                      _buildPdfCell('Tk ${currencyFormat.format(summary.preDue)}', align: pw.TextAlign.right, isBold: true, fontSize: 8.5, color: redDebit),
                     ],
                   ),
 

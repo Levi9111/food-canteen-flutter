@@ -25,6 +25,7 @@ class PStaffPdfExportService {
 
     final currencyFormat = NumberFormat('#,##0.00', 'en_US');
     final dateFormat = DateFormat('dd-MM-yyyy');
+    final dayNameFormat = DateFormat('EEEE');
     final monthName = monthNames[month - 1];
 
     pw.MemoryImage? crestImage;
@@ -158,16 +159,16 @@ class PStaffPdfExportService {
 
               pw.SizedBox(height: 8),
 
-              // Ledger Table
+              // Ledger Table (Items consumed column removed)
               pw.Table(
                 border: pw.TableBorder.all(color: borderGrey, width: 0.5),
                 columnWidths: const {
                   0: pw.FixedColumnWidth(28),
-                  1: pw.FixedColumnWidth(62),
-                  2: pw.FlexColumnWidth(3.0),
-                  3: pw.FixedColumnWidth(70),
-                  4: pw.FixedColumnWidth(55),
-                  5: pw.FixedColumnWidth(70),
+                  1: pw.FixedColumnWidth(68),
+                  2: pw.FixedColumnWidth(68),
+                  3: pw.FlexColumnWidth(2.5),
+                  4: pw.FixedColumnWidth(65),
+                  5: pw.FixedColumnWidth(75),
                 },
                 children: [
                   pw.TableRow(
@@ -175,10 +176,10 @@ class PStaffPdfExportService {
                     children: [
                       _buildPdfCell('DAY', isHeader: true, align: pw.TextAlign.center),
                       _buildPdfCell('DATE', isHeader: true, align: pw.TextAlign.center),
-                      _buildPdfCell('CANTEEN ITEMS / PARTICULARS', isHeader: true),
-                      _buildPdfCell('PRICE (TK)', isHeader: true, align: pw.TextAlign.right),
-                      _buildPdfCell('DUTY', isHeader: true, align: pw.TextAlign.center),
+                      _buildPdfCell('WEEKDAY', isHeader: true, align: pw.TextAlign.center),
+                      _buildPdfCell('DUTY IN-CHARGE', isHeader: true),
                       _buildPdfCell('STAFF SIGN', isHeader: true, align: pw.TextAlign.center),
+                      _buildPdfCell('PRICE (TK)', isHeader: true, align: pw.TextAlign.right),
                     ],
                   ),
                   ...summary.days.map((record) {
@@ -203,9 +204,19 @@ class PStaffPdfExportService {
                           fontSize: 7.5,
                         ),
                         _buildPdfCell(
-                          record.particulars ?? (hasSpent ? 'Tea, snacks & refreshments' : '—'),
-                          fontSize: 8,
+                          dayNameFormat.format(record.date),
+                          align: pw.TextAlign.center,
+                          fontSize: 7.5,
+                        ),
+                        _buildPdfCell(
+                          hasSpent ? record.recordedBy : '—',
+                          fontSize: 7.5,
                           color: hasSpent ? PdfColors.black : PdfColors.grey700,
+                        ),
+                        _buildPdfCell(
+                          hasSpent ? 'Recorded' : '—',
+                          align: pw.TextAlign.center,
+                          fontSize: 7.5,
                         ),
                         _buildPdfCell(
                           hasSpent ? 'Tk ${currencyFormat.format(record.amount)}' : '—',
@@ -213,16 +224,6 @@ class PStaffPdfExportService {
                           isBold: hasSpent,
                           fontSize: 8,
                           color: hasSpent ? redDebit : PdfColors.grey600,
-                        ),
-                        _buildPdfCell(
-                          hasSpent ? record.recordedBy : '—',
-                          align: pw.TextAlign.center,
-                          fontSize: 7.5,
-                        ),
-                        _buildPdfCell(
-                          hasSpent ? 'Attended' : '—',
-                          align: pw.TextAlign.center,
-                          fontSize: 7.5,
                         ),
                       ],
                     );
@@ -234,10 +235,10 @@ class PStaffPdfExportService {
                     children: [
                       _buildPdfCell(''),
                       _buildPdfCell('1. MONTH TOTAL', isBold: true, fontSize: 8),
-                      _buildPdfCell('Current month canteen consumption', fontSize: 7.5),
-                      _buildPdfCell('Tk ${currencyFormat.format(summary.totalMonthlySpending)}', align: pw.TextAlign.right, isBold: true, fontSize: 8.5),
-                      _buildPdfCell('LOGGED', align: pw.TextAlign.center, fontSize: 7),
+                      _buildPdfCell(''),
+                      _buildPdfCell('Current month total canteen price', fontSize: 7.5),
                       _buildPdfCell('AUDITED', align: pw.TextAlign.center, fontSize: 7),
+                      _buildPdfCell('Tk ${currencyFormat.format(summary.totalMonthlySpending)}', align: pw.TextAlign.right, isBold: true, fontSize: 8.5),
                     ],
                   ),
                   pw.TableRow(
@@ -245,21 +246,21 @@ class PStaffPdfExportService {
                     children: [
                       _buildPdfCell(''),
                       _buildPdfCell('2. PREVIOUS DUE', isBold: true, fontSize: 8, color: redDebit),
+                      _buildPdfCell(''),
                       _buildPdfCell('Arrears carried forward from prior month', fontSize: 7.5),
-                      _buildPdfCell('Tk ${currencyFormat.format(summary.preDue)}', align: pw.TextAlign.right, isBold: true, fontSize: 8.5, color: redDebit),
-                      _buildPdfCell('BROUGHT FWD', align: pw.TextAlign.center, fontSize: 7),
                       _buildPdfCell('CONFIRMED', align: pw.TextAlign.center, fontSize: 7),
+                      _buildPdfCell('Tk ${currencyFormat.format(summary.preDue)}', align: pw.TextAlign.right, isBold: true, fontSize: 8.5, color: redDebit),
                     ],
                   ),
                   pw.TableRow(
                     decoration: pw.BoxDecoration(color: lightBlueBg),
                     children: [
                       _buildPdfCell(''),
-                      _buildPdfCell('3. GRAND TOTAL', isBold: true, fontSize: 8.5),
+                      _buildPdfCell('3. GROSS TOTAL', isBold: true, fontSize: 8.5),
+                      _buildPdfCell(''),
                       _buildPdfCell('Gross liability (Pre Due + Current Month)', isBold: true, fontSize: 7.5),
+                      _buildPdfCell('VERIFIED', align: pw.TextAlign.center, fontSize: 7),
                       _buildPdfCell('Tk ${currencyFormat.format(summary.grandTotal)}', align: pw.TextAlign.right, isBold: true, fontSize: 9),
-                      _buildPdfCell('VERIFIED', align: pw.TextAlign.center, fontSize: 7),
-                      _buildPdfCell('VERIFIED', align: pw.TextAlign.center, fontSize: 7),
                     ],
                   ),
                   pw.TableRow(
@@ -267,25 +268,71 @@ class PStaffPdfExportService {
                     children: [
                       _buildPdfCell(''),
                       _buildPdfCell('4. LESS: PAID', isBold: true, fontSize: 8, color: greenCredit),
-                      _buildPdfCell('Amount collected / recovered from staff', fontSize: 7.5, color: greenCredit),
-                      _buildPdfCell('Tk ${currencyFormat.format(summary.paid)}', align: pw.TextAlign.right, isBold: true, fontSize: 8.5, color: greenCredit),
-                      _buildPdfCell('COLLECTED', align: pw.TextAlign.center, fontSize: 7),
+                      _buildPdfCell(''),
+                      _buildPdfCell('Random payments collected during month', fontSize: 7.5, color: greenCredit),
                       _buildPdfCell('RECEIPTED', align: pw.TextAlign.center, fontSize: 7),
+                      _buildPdfCell('Tk ${currencyFormat.format(summary.paid)}', align: pw.TextAlign.right, isBold: true, fontSize: 8.5, color: greenCredit),
                     ],
                   ),
                   pw.TableRow(
                     decoration: pw.BoxDecoration(color: navyColor),
                     children: [
                       _buildPdfCell('', isHeader: true),
-                      _buildPdfCell('5. NET CLOSING DUE', isHeader: true, isBold: true, fontSize: 8.5),
-                      _buildPdfCell('Net outstanding balance payable as of month end', isHeader: true, fontSize: 7.5),
-                      _buildPdfCell('Tk ${currencyFormat.format(summary.netDue)}', isHeader: true, align: pw.TextAlign.right, isBold: true, fontSize: 9.5, color: goldColor),
-                      _buildPdfCell('FINAL', isHeader: true, align: pw.TextAlign.center, fontSize: 7),
-                      _buildPdfCell(summary.netDue <= 0 ? 'CLEARED' : 'PENDING', isHeader: true, align: pw.TextAlign.center, fontSize: 7),
+                      _buildPdfCell('5. EFFECTIVE BILL', isHeader: true, isBold: true, fontSize: 8.5),
+                      _buildPdfCell('', isHeader: true),
+                      _buildPdfCell('Net effective bill payable at month end', isHeader: true, fontSize: 7.5),
+                      _buildPdfCell(summary.effectiveBill <= 0 ? 'CLEARED' : 'PENDING', isHeader: true, align: pw.TextAlign.center, fontSize: 7),
+                      _buildPdfCell('Tk ${currencyFormat.format(summary.effectiveBill)}', isHeader: true, align: pw.TextAlign.right, isBold: true, fontSize: 9.5, color: goldColor),
                     ],
                   ),
                 ],
               ),
+
+              if (summary.payments.isNotEmpty) ...[
+                pw.SizedBox(height: 8),
+                pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  color: navyColor,
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(
+                        'RANDOM PAYMENTS LOGGED (DATES & AMOUNTS)',
+                        style: pw.TextStyle(color: goldColor, fontSize: 8, fontWeight: pw.FontWeight.bold),
+                      ),
+                      pw.Text(
+                        'TOTAL PAID: Tk ${currencyFormat.format(summary.paid)}',
+                        style: pw.TextStyle(color: PdfColors.white, fontSize: 8, fontWeight: pw.FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+                pw.Table(
+                  border: pw.TableBorder.all(color: borderGrey, width: 0.5),
+                  columnWidths: const {
+                    0: pw.FixedColumnWidth(70),
+                    1: pw.FlexColumnWidth(3.0),
+                    2: pw.FixedColumnWidth(75),
+                  },
+                  children: [
+                    pw.TableRow(
+                      decoration: pw.BoxDecoration(color: lightBlueBg),
+                      children: [
+                        _buildPdfCell('PAYMENT DATE', isBold: true, fontSize: 7.5),
+                        _buildPdfCell('RECEIPT / REMARKS', isBold: true, fontSize: 7.5),
+                        _buildPdfCell('AMOUNT PAID (TK)', isBold: true, align: pw.TextAlign.right, fontSize: 7.5),
+                      ],
+                    ),
+                    ...summary.payments.map((p) => pw.TableRow(
+                      children: [
+                        _buildPdfCell(dateFormat.format(p.date), fontSize: 7.5),
+                        _buildPdfCell(p.receiptNote ?? 'Cash received towards canteen ledger', fontSize: 7.5),
+                        _buildPdfCell('Tk ${currencyFormat.format(p.amount)}', align: pw.TextAlign.right, isBold: true, fontSize: 7.5, color: greenCredit),
+                      ],
+                    )),
+                  ],
+                ),
+              ],
 
               pw.Spacer(),
 

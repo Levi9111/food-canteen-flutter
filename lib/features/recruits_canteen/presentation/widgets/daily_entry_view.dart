@@ -324,7 +324,7 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                             hasEntry
                                 ? (expense.representativeName != null && expense.representativeName!.isNotEmpty
                                     ? 'Rep: ${expense.representativeName}'
-                                    : (expense.itemsDescription ?? 'Consumption recorded'))
+                                    : 'Room price logged')
                                 : 'No price recorded today',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -406,7 +406,6 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                 DataColumn(label: Text('#', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
                 DataColumn(label: Text('ROOM', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
                 DataColumn(label: Text('ROOM REPRESENTATIVE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                DataColumn(label: Text('CANTEEN PARTICULARS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
                 DataColumn(label: Text('DUTY', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
                 DataColumn(label: Text('PRICE (TK)', style: TextStyle(color: AppColors.bafGold, fontWeight: FontWeight.bold))),
                 DataColumn(label: Text('ACTION', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
@@ -447,16 +446,6 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                           expense?.representativeName ?? '—',
                           style: TextStyle(
                             fontSize: 12,
-                            color: hasEntry ? theme.textPrimary : theme.textSecondary,
-                          ),
-                        ),
-                      ),
-                      DataCell(
-                        Text(
-                          expense?.itemsDescription ?? 'Nil consumption',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontStyle: hasEntry ? FontStyle.normal : FontStyle.italic,
                             color: hasEntry ? theme.textPrimary : theme.textSecondary,
                           ),
                         ),
