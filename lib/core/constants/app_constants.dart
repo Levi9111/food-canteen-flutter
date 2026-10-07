@@ -10,9 +10,10 @@ class AppConstants {
   static const String bafCrestPath = 'assets/images/baf_crest.png';
 
   // API Config
-  static const String defaultBaseUrl = 'http://localhost:5000/api/v1';
-  static const Duration connectTimeout = Duration(seconds: 15);
-  static const Duration receiveTimeout = Duration(seconds: 15);
+  static const String defaultBaseUrl =
+      'https://food-canteen-server.onrender.com/api/v1';
+  static const Duration connectTimeout = Duration(seconds: 20);
+  static const Duration receiveTimeout = Duration(seconds: 20);
 
   // Storage Keys
   static const String tokenKey = 'auth_token';

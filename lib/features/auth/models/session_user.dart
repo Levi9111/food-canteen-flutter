@@ -1,4 +1,5 @@
 class SessionUser {
+  final String? id;
   final String username;
   final String name;
   final String rank;
@@ -6,6 +7,7 @@ class SessionUser {
   final String bdNo;
 
   const SessionUser({
+    this.id,
     required this.username,
     required this.name,
     required this.rank,
@@ -14,6 +16,7 @@ class SessionUser {
   });
 
   Map<String, dynamic> toJson() => {
+        if (id != null) 'id': id,
         'username': username,
         'name': name,
         'rank': rank,
@@ -22,10 +25,11 @@ class SessionUser {
       };
 
   factory SessionUser.fromJson(Map<String, dynamic> json) => SessionUser(
-        username: json['username'] as String,
-        name: json['name'] as String,
-        rank: json['rank'] as String,
-        role: json['role'] as String,
-        bdNo: json['bdNo'] as String,
+        id: json['id'] as String? ?? json['userId'] as String? ?? json['_id'] as String?,
+        username: json['username'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        rank: json['rank'] as String? ?? 'Sgt',
+        role: json['role'] as String? ?? 'NCOIC',
+        bdNo: json['bdNo'] as String? ?? '',
       );
 }
