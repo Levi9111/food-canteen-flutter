@@ -1,6 +1,10 @@
 import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/network/api_client.dart';
+import '../../../core/network/api_endpoints.dart';
+import '../../../core/storage/token_storage.dart';
 import '../../recruits_canteen/constants/canteen_constants.dart';
 import '../../recruits_canteen/providers/canteen_register_provider.dart';
 import '../../p_staff_canteen/providers/p_staff_register_provider.dart';
@@ -111,7 +115,60 @@ class SessionNotifier extends Notifier<SessionState> {
     final cleanUser = username.trim().toLowerCase();
     final cleanPass = password.trim();
 
-    // Check fixed credentials
+    // 1. Authenticate with backend server API
+    try {
+      final dio = ref.read(dioProvider);
+      final response = await dio.post(
+        ApiEndpoints.login,
+        data: {
+          'loginId': cleanUser,
+          'password': cleanPass,
+        },
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final resData = response.data as Map<String, dynamic>;
+        final data = resData['data'] as Map<String, dynamic>?;
+        if (data != null) {
+          final accessToken = data['accessToken'] as String?;
+          final refreshToken = data['refreshToken'] as String?;
+          final userJson = data['user'] as Map<String, dynamic>?;
+
+          if (accessToken != null) {
+            await ref.read(tokenStorageProvider).saveToken(accessToken);
+          }
+          if (refreshToken != null) {
+            await ref.read(tokenStorageProvider).saveRefreshToken(refreshToken);
+          }
+
+          if (userJson != null) {
+            final user = SessionUser.fromJson(userJson);
+            try {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString(_prefsKeySession, jsonEncode(user.toJson()));
+            } catch (_) {}
+
+            if (_disposed) return true;
+            state = SessionState(isAuthenticated: true, user: user, isLoading: false);
+            _syncActiveManager(user.role);
+            return true;
+          }
+        }
+      }
+    } catch (e) {
+      if (e is DioException && e.response?.statusCode == 401) {
+        if (!_disposed) {
+          state = state.copyWith(
+            isLoading: false,
+            errorMessage: 'Invalid military credentials. Please check your username and password.',
+          );
+        }
+        return false;
+      }
+      // If server unreachable or error, fallback to offline credentials
+    }
+
+    // 2. Offline fallback
     SessionUser? matchedUser;
     if (cleanUser == 'ncoic' && (cleanPass == 'ncoic123' || cleanPass == 'NcoicPassword123')) {
       matchedUser = fixedAccounts[0];
@@ -122,10 +179,12 @@ class SessionNotifier extends Notifier<SessionState> {
     }
 
     if (matchedUser == null) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'Invalid military credentials. Try ncoic / ncoic123 or jcoic / jcoic123',
-      );
+      if (!_disposed) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'Invalid military credentials. Try ncoic / ncoic123 or jcoic / jcoic123',
+        );
+      }
       return false;
     }
 
@@ -134,16 +193,21 @@ class SessionNotifier extends Notifier<SessionState> {
       await prefs.setString(_prefsKeySession, jsonEncode(matchedUser.toJson()));
     } catch (_) {}
 
-    state = SessionState(isAuthenticated: true, user: matchedUser, isLoading: false);
-    _syncActiveManager(matchedUser.role);
+    if (!_disposed) {
+      state = SessionState(isAuthenticated: true, user: matchedUser, isLoading: false);
+      _syncActiveManager(matchedUser.role);
+    }
     return true;
   }
 
   Future<void> logout() async {
     try {
+      await ref.read(tokenStorageProvider).clearAuth();
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_prefsKeySession);
     } catch (_) {}
-    state = const SessionState(isAuthenticated: false, user: null, isLoading: false);
+    if (!_disposed) {
+      state = const SessionState(isAuthenticated: false, user: null, isLoading: false);
+    }
   }
 }
