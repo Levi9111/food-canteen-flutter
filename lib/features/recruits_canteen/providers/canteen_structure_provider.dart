@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/network/api_client.dart';
+import '../../../core/network/api_endpoints.dart';
 import '../constants/canteen_constants.dart';
 
 class CanteenStructureState {
@@ -93,6 +95,37 @@ class CanteenStructureNotifier extends Notifier<CanteenStructureState> {
     } catch (_) {
       // Fallback to default state
     }
+
+    // Next sync with backend database
+    _syncWithServer();
+  }
+
+  Future<void> _syncWithServer() async {
+    try {
+      final dio = ref.read(dioProvider);
+      final response = await dio.get(ApiEndpoints.squadrons);
+      if (_disposed) return;
+      if (response.statusCode == 200 && response.data != null) {
+        final resData = response.data as Map<String, dynamic>;
+        final data = resData['data'] as List?;
+        if (data != null && data.isNotEmpty) {
+          final List<String> serverSqns = [];
+          final Map<String, List<String>> serverRooms = {};
+          for (final item in data) {
+            final m = item as Map<String, dynamic>;
+            final name = m['name'] as String;
+            final rooms = (m['rooms'] as List?)?.map((r) => r.toString()).toList() ?? [];
+            serverSqns.add(name);
+            serverRooms[name] = rooms.isNotEmpty ? rooms : List<String>.from(CanteenConstants.rooms);
+          }
+          if (_disposed) return;
+          state = state.copyWith(squadrons: serverSqns, roomsBySquadron: serverRooms);
+          await _saveToPrefs();
+        }
+      }
+    } catch (_) {
+      // Gracefully retain offline/cached state
+    }
   }
 
   Future<void> _saveToPrefs() async {
@@ -115,6 +148,19 @@ class CanteenStructureNotifier extends Notifier<CanteenStructureState> {
 
     state = state.copyWith(squadrons: updatedSqns, roomsBySquadron: updatedRooms);
     await _saveToPrefs();
+
+    // Async sync to server database
+    try {
+      final dio = ref.read(dioProvider);
+      await dio.post(
+        ApiEndpoints.squadrons,
+        data: {
+          'name': trimmed,
+          'rooms': CanteenConstants.rooms,
+        },
+      );
+    } catch (_) {}
+
     return true;
   }
 
@@ -128,6 +174,13 @@ class CanteenStructureNotifier extends Notifier<CanteenStructureState> {
 
     state = state.copyWith(squadrons: updatedSqns, roomsBySquadron: updatedRooms);
     await _saveToPrefs();
+
+    // Async sync to server database
+    try {
+      final dio = ref.read(dioProvider);
+      await dio.delete('${ApiEndpoints.squadrons}/$name');
+    } catch (_) {}
+
     return true;
   }
 
@@ -144,6 +197,16 @@ class CanteenStructureNotifier extends Notifier<CanteenStructureState> {
 
     state = state.copyWith(roomsBySquadron: updatedRooms);
     await _saveToPrefs();
+
+    // Async sync to server database
+    try {
+      final dio = ref.read(dioProvider);
+      await dio.post(
+        ApiEndpoints.squadronRooms(squadron),
+        data: {'room': trimmed},
+      );
+    } catch (_) {}
+
     return true;
   }
 
@@ -158,6 +221,13 @@ class CanteenStructureNotifier extends Notifier<CanteenStructureState> {
 
     state = state.copyWith(roomsBySquadron: updatedRooms);
     await _saveToPrefs();
+
+    // Async sync to server database
+    try {
+      final dio = ref.read(dioProvider);
+      await dio.delete('${ApiEndpoints.squadronRooms(squadron)}/$roomName');
+    } catch (_) {}
+
     return true;
   }
 }
