@@ -49,12 +49,33 @@ final operatorManagementProvider =
 class OperatorManagementNotifier extends Notifier<OperatorManagementState> {
   bool _disposed = false;
 
+  static const List<SessionUser> defaultBaseline = [
+    SessionUser(
+      id: 'mock_ncoic',
+      username: 'ncoic',
+      name: 'Tariqul Islam',
+      rank: 'Sgt',
+      role: 'NCOIC',
+      bdNo: 'BD/48291',
+    ),
+    SessionUser(
+      id: 'mock_jcoic',
+      username: 'jcoic',
+      name: 'Humayun Kabir',
+      rank: 'MWO',
+      role: 'JCOIC',
+      bdNo: 'BD/39102',
+    ),
+  ];
+
   @override
   OperatorManagementState build() {
     _disposed = false;
     ref.onDispose(() => _disposed = true);
-    fetchOperators();
-    return const OperatorManagementState(isLoading: true);
+    return const OperatorManagementState(
+      operators: defaultBaseline,
+      isLoading: false,
+    );
   }
 
   Future<void> fetchOperators() async {
