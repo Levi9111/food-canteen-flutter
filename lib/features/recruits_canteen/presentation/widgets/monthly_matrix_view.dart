@@ -8,6 +8,7 @@ import '../../../../core/widgets/modal_action_bar.dart';
 import '../../../../core/widgets/squadron_dropdown.dart';
 import '../../providers/canteen_register_provider.dart';
 import '../../providers/canteen_structure_provider.dart';
+import '../../services/canteen_pdf_export_service.dart';
 
 class MonthlyMatrixView extends ConsumerStatefulWidget {
   const MonthlyMatrixView({super.key});
@@ -18,6 +19,7 @@ class MonthlyMatrixView extends ConsumerStatefulWidget {
 
 class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
   bool _forceMatrixTable = false;
+  bool _isGeneratingPdf = false;
 
   @override
   Widget build(BuildContext context) {
@@ -147,6 +149,46 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
                             Text(
                               _forceMatrixTable ? 'CARD VIEW' : 'FULL TABLE',
                               style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    // Download PDF Button
+                    InkWell(
+                      onTap: _isGeneratingPdf
+                          ? null
+                          : () => _handleDownloadPdf(state),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.bafGold,
+                          border: Border.all(color: AppColors.bafGold),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _isGeneratingPdf
+                                ? const SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 1.5,
+                                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.bafNavy),
+                                    ),
+                                  )
+                                : const Icon(Icons.download, size: 13, color: AppColors.bafNavy),
+                            const SizedBox(width: 4),
+                            Text(
+                              _isGeneratingPdf ? 'SAVING...' : 'DOWNLOAD PDF',
+                              style: const TextStyle(
+                                color: AppColors.bafNavy,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
                           ],
                         ),
@@ -859,5 +901,79 @@ class _MonthlyMatrixViewState extends ConsumerState<MonthlyMatrixView> {
         );
       },
     );
+  }
+
+  Future<void> _handleDownloadPdf(
+    CanteenRegisterState state,
+  ) async {
+    setState(() => _isGeneratingPdf = true);
+    try {
+      final summary = state.getRoomMonthlySummary(
+        state.activeEntry,
+        state.selectedSquadron,
+        state.selectedRoom,
+        state.selectedYear,
+        state.selectedMonth,
+      );
+
+      final pdfBytes = await CanteenPdfExportService.generateRoomSpreadsheetPdf(
+        summary: summary,
+        entryNumber: state.activeEntry,
+        squadron: state.selectedSquadron,
+        room: state.selectedRoom,
+        year: state.selectedYear,
+        month: state.selectedMonth,
+      );
+
+      final filename =
+          'BAF_RTS_Entry_${state.activeEntry}_${state.selectedSquadron}_${state.selectedRoom.replaceAll(' ', '_')}_${state.selectedYear}_${state.selectedMonth.toString().padLeft(2, '0')}.pdf';
+
+      final savedPath = await CanteenPdfExportService.downloadPdfToDevice(
+        pdfBytes: pdfBytes,
+        filename: filename,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.bafNavy,
+          duration: const Duration(seconds: 4),
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_outline, color: AppColors.bafGold, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'STATEMENT PDF DOWNLOAD COMPLETE',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.white),
+                    ),
+                    Text(
+                      'Saved to: $savedPath',
+                      style: const TextStyle(fontSize: 9.5, color: AppColors.bafSkyBlue),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red.shade900,
+          content: Text('Failed to download PDF: $e'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isGeneratingPdf = false);
+    }
   }
 }
