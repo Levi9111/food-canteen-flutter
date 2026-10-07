@@ -32,6 +32,20 @@ class CanteenConstants {
   static const String roleJcoic = 'JCOIC';
   static const List<String> managerRoles = [roleNcoic, roleJcoic];
 
+  // BAF Military Ranks
+  static const List<String> ranks = [
+    'MWO',
+    'SWO',
+    'WO',
+    'Sgt',
+    'Cpl',
+    'LAC',
+    'AC',
+    'Sqn Ldr',
+    'Wg Cdr',
+    'Civilian',
+  ];
+
   // Default Active Entry
   static const String defaultEntry = '54';
 

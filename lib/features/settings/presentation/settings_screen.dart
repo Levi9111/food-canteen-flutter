@@ -6,7 +6,10 @@ import '../../../core/theme/canteen_theme_extension.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/widgets/baf_rts_crest.dart';
 import '../../../core/widgets/modal_action_bar.dart';
+import '../../auth/models/session_user.dart';
+import '../../auth/providers/operator_management_provider.dart';
 import '../../auth/providers/session_provider.dart';
+import '../../recruits_canteen/constants/canteen_constants.dart';
 import '../../recruits_canteen/providers/canteen_register_provider.dart';
 import '../../recruits_canteen/providers/canteen_structure_provider.dart';
 
@@ -709,7 +712,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             const SizedBox(height: 14),
 
-            // 6. Active Session & Logout
+            // 6. Operator Auth Management (DB)
+            _buildSectionHeader(Icons.manage_accounts, 'OPERATOR AUTH MANAGEMENT (DB)'),
+            _buildOperatorManagementSection(context, ref, theme, session),
+            const SizedBox(height: 14),
+
+            // 7. Active Session & Logout
             _buildSectionHeader(Icons.person_pin, 'OPERATOR SESSION'),
             Container(
               padding: const EdgeInsets.all(12),
@@ -849,6 +857,567 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildOperatorManagementSection(
+    BuildContext context,
+    WidgetRef ref,
+    CanteenThemeColors theme,
+    SessionState session,
+  ) {
+    final opState = ref.watch(operatorManagementProvider);
+    final currentRole = session.user?.role ?? '';
+    final currentUserId = session.user?.id;
+    final currentUsername = session.user?.username ?? '';
+
+    // Extract NCOIC and JCOIC operators
+    final ncoic = opState.operators.where((u) => u.role == 'NCOIC').firstOrNull;
+    final jcoic = opState.operators.where((u) => u.role == 'JCOIC').firstOrNull;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.cardBackground,
+        border: Border.all(color: theme.cardBorderLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Subheader & Refresh
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'ROLE OCCUPANCY: ${opState.operators.length}/2 SLOTS',
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w900,
+                  color: opState.isFullyStaffed ? AppColors.bafRoundelGreen : AppColors.bafGold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              InkWell(
+                onTap: () => ref.read(operatorManagementProvider.notifier).fetchOperators(),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  child: Row(
+                    children: [
+                      Icon(Icons.refresh, size: 13, color: theme.accentGold),
+                      const SizedBox(width: 3),
+                      Text(
+                        'REFRESH DB',
+                        style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: theme.accentGold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // NCOIC Card
+          _buildRoleCard(
+            context: context,
+            ref: ref,
+            theme: theme,
+            roleTitle: 'NCOIC (NON-COMMISSIONED OFFICER IN-CHARGE)',
+            roleTag: 'NCOIC',
+            operator: ncoic,
+            currentRole: currentRole,
+            currentUserId: currentUserId,
+            currentUsername: currentUsername,
+            canRemove: currentRole == 'JCOIC' || currentRole == 'ADMIN',
+          ),
+          const SizedBox(height: 10),
+
+          // JCOIC Card
+          _buildRoleCard(
+            context: context,
+            ref: ref,
+            theme: theme,
+            roleTitle: 'JCOIC (JUNIOR COMMISSIONED OFFICER IN-CHARGE)',
+            roleTag: 'JCOIC',
+            operator: jcoic,
+            currentRole: currentRole,
+            currentUserId: currentUserId,
+            currentUsername: currentUsername,
+            canRemove: currentRole == 'NCOIC' || currentRole == 'ADMIN',
+          ),
+          const SizedBox(height: 12),
+
+          // Enrollment or Max limit banner
+          if (opState.isFullyStaffed)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: theme.surface,
+                border: Border.all(color: theme.cardBorder),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.shield_outlined, size: 16, color: AppColors.bafGold),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Both roles active (1 NCOIC & 1 JCOIC). No additional user allowed unless an existing role is removed.',
+                      style: TextStyle(fontSize: 10, color: theme.textSecondary, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else if (opState.vacantRole != null)
+            SizedBox(
+              height: 40,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.person_add_alt_1, size: 16),
+                label: Text(
+                  'ENROLL ${opState.vacantRole} OPERATOR',
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11.5, letterSpacing: 0.5),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.bafGold,
+                  foregroundColor: AppColors.bafNavy,
+                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                ),
+                onPressed: () => _showEnrollOperatorDialog(context, ref, opState.vacantRole!),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRoleCard({
+    required BuildContext context,
+    required WidgetRef ref,
+    required CanteenThemeColors theme,
+    required String roleTitle,
+    required String roleTag,
+    required SessionUser? operator,
+    required String currentRole,
+    required String? currentUserId,
+    required String currentUsername,
+    required bool canRemove,
+  }) {
+    final isVacant = operator == null;
+    final isSelf = !isVacant &&
+        ((operator.id != null && operator.id == currentUserId) ||
+            operator.username.toLowerCase() == currentUsername.toLowerCase());
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: theme.surface,
+        border: Border.all(
+          color: isVacant ? theme.cardBorderLight : theme.accentGold.withValues(alpha: 0.4),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                color: isVacant ? AppColors.textMuted : AppColors.bafNavy,
+                child: Text(
+                  roleTag,
+                  style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  roleTitle,
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary),
+                ),
+              ),
+              if (isSelf)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  color: AppColors.bafRoundelGreen.withValues(alpha: 0.2),
+                  child: const Text(
+                    'YOU',
+                    style: TextStyle(color: AppColors.bafRoundelGreen, fontSize: 8.5, fontWeight: FontWeight.bold),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (isVacant)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'VACANT - POSITION NOT ASSIGNED',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: theme.textSecondary),
+                ),
+                TextButton(
+                  onPressed: () => _showEnrollOperatorDialog(context, ref, roleTag),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    '+ ENROLL',
+                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900, color: theme.accentGold),
+                  ),
+                ),
+              ],
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        operator.name,
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.textPrimary),
+                      ),
+                      Text(
+                        '${operator.rank} • BD No: ${operator.bdNo} (@${operator.username})',
+                        style: TextStyle(fontSize: 10, color: theme.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                if (!isSelf && canRemove)
+                  OutlinedButton.icon(
+                    icon: Icon(Icons.person_remove, size: 13, color: theme.debit),
+                    label: Text(
+                      'REMOVE $roleTag',
+                      style: TextStyle(color: theme.debit, fontSize: 9.5, fontWeight: FontWeight.bold),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: theme.debit),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                    ),
+                    onPressed: () => _confirmRemoveOperator(context, ref, operator),
+                  ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmRemoveOperator(BuildContext context, WidgetRef ref, SessionUser target) {
+    final theme = context.canteenTheme;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: theme.cardBackground,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: theme.debit, size: 22),
+            const SizedBox(width: 8),
+            Text(
+              'REMOVE ${target.role}?',
+              style: TextStyle(color: theme.textPrimary, fontSize: 13, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to remove ${target.role} (${target.name}, ${target.bdNo}) from the database? This slot will become vacant.',
+          style: TextStyle(color: theme.textSecondary, fontSize: 11.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text('CANCEL', style: TextStyle(color: theme.textSecondary, fontWeight: FontWeight.bold)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.debit,
+              foregroundColor: Colors.white,
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+            ),
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              final targetId = target.id ?? target.username;
+              final success = await ref.read(operatorManagementProvider.notifier).removeOperator(targetId);
+              if (context.mounted) {
+                final opState = ref.read(operatorManagementProvider);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(success
+                        ? (opState.successMessage ?? 'Operator removed')
+                        : (opState.errorMessage ?? 'Removal failed')),
+                    backgroundColor: success ? AppColors.bafRoundelGreen : theme.debit,
+                  ),
+                );
+              }
+            },
+            child: const Text('CONFIRM REMOVAL', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEnrollOperatorDialog(BuildContext context, WidgetRef ref, String role) {
+    final nameCtrl = TextEditingController();
+    final usernameCtrl = TextEditingController();
+    final bdNoCtrl = TextEditingController();
+    final passCtrl = TextEditingController();
+    String selectedRank = role == 'JCOIC' ? 'MWO' : 'Sgt';
+    final theme = context.canteenTheme;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (modalCtx, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(modalCtx).viewInsets.bottom + 16,
+                top: 24,
+              ),
+              child: Center(
+                child: Container(
+                  width: 420,
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: theme.cardBackground,
+                    border: Border.all(color: theme.accentGold, width: 1.5),
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          color: AppColors.bafNavy,
+                          child: Row(
+                            children: [
+                              const Icon(Icons.person_add_alt_1, color: AppColors.bafGold, size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                'ENROLL NEW $role OPERATOR',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'FULL NAME:',
+                                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textPrimary),
+                              ),
+                              const SizedBox(height: 4),
+                              TextField(
+                                controller: nameCtrl,
+                                style: TextStyle(color: theme.textPrimary, fontSize: 13),
+                                decoration: InputDecoration(
+                                  hintText: 'e.g. Tariqul Islam',
+                                  filled: true,
+                                  fillColor: theme.surface,
+                                  isDense: true,
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: theme.cardBorder)),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'USERNAME:',
+                                          style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textPrimary),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        TextField(
+                                          controller: usernameCtrl,
+                                          style: TextStyle(color: theme.textPrimary, fontSize: 13),
+                                          decoration: InputDecoration(
+                                            hintText: role.toLowerCase(),
+                                            filled: true,
+                                            fillColor: theme.surface,
+                                            isDense: true,
+                                            border: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: theme.cardBorder)),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'BD NUMBER:',
+                                          style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textPrimary),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        TextField(
+                                          controller: bdNoCtrl,
+                                          style: TextStyle(color: theme.textPrimary, fontSize: 13),
+                                          decoration: InputDecoration(
+                                            hintText: 'BD/XXXXX',
+                                            filled: true,
+                                            fillColor: theme.surface,
+                                            isDense: true,
+                                            border: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: theme.cardBorder)),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'BAF RANK:',
+                                          style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textPrimary),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        DropdownButtonFormField<String>(
+                                          initialValue: selectedRank,
+                                          dropdownColor: theme.cardBackground,
+                                          style: TextStyle(color: theme.textPrimary, fontSize: 13),
+                                          decoration: InputDecoration(
+                                            filled: true,
+                                            fillColor: theme.surface,
+                                            isDense: true,
+                                            border: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: theme.cardBorder)),
+                                          ),
+                                          items: CanteenConstants.ranks.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                                          onChanged: (val) {
+                                            if (val != null) {
+                                              setModalState(() => selectedRank = val);
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'ASSIGNED ROLE:',
+                                          style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textPrimary),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Container(
+                                          height: 48,
+                                          alignment: Alignment.center,
+                                          color: AppColors.bafNavy,
+                                          child: Text(
+                                            role,
+                                            style: const TextStyle(color: AppColors.bafGold, fontWeight: FontWeight.w900, fontSize: 13),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'PASSWORD (MIN 6 CHARS):',
+                                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textPrimary),
+                              ),
+                              const SizedBox(height: 4),
+                              TextField(
+                                controller: passCtrl,
+                                obscureText: true,
+                                style: TextStyle(color: theme.textPrimary, fontSize: 13),
+                                decoration: InputDecoration(
+                                  hintText: 'Enter secure password',
+                                  filled: true,
+                                  fillColor: theme.surface,
+                                  isDense: true,
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: theme.cardBorder)),
+                                ),
+                              ),
+                              const SizedBox(height: 18),
+                              ModalActionBar(
+                                cancelLabel: 'CANCEL',
+                                confirmLabel: 'ENROLL $role',
+                                onCancel: () => Navigator.of(ctx).pop(),
+                                onConfirm: () async {
+                                  final name = nameCtrl.text.trim();
+                                  final username = usernameCtrl.text.trim();
+                                  final bdNo = bdNoCtrl.text.trim();
+                                  final pass = passCtrl.text.trim();
+
+                                  if (name.isEmpty || username.isEmpty || bdNo.isEmpty || pass.length < 6) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Please fill all fields properly (password min 6 chars)')),
+                                    );
+                                    return;
+                                  }
+
+                                  final success = await ref.read(operatorManagementProvider.notifier).enrollOperator(
+                                    username: username,
+                                    name: name,
+                                    rank: selectedRank,
+                                    bdNo: bdNo,
+                                    password: pass,
+                                    role: role,
+                                  );
+
+                                  if (ctx.mounted) {
+                                    Navigator.of(ctx).pop();
+                                    final opState = ref.read(operatorManagementProvider);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(success
+                                            ? (opState.successMessage ?? 'Enrolled successfully')
+                                            : (opState.errorMessage ?? 'Enrollment failed')),
+                                        backgroundColor: success ? AppColors.bafRoundelGreen : theme.debit,
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
