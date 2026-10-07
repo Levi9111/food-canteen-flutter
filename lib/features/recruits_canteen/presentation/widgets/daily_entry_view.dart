@@ -5,6 +5,7 @@ import '../../../../core/localization/locale_provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/canteen_theme_extension.dart';
+import '../../../../core/widgets/canteen_calculator_dialog.dart';
 import '../../../../core/widgets/modal_action_bar.dart';
 import '../../../../core/widgets/squadron_dropdown.dart';
 import '../../models/daily_room_expense.dart';
@@ -533,9 +534,6 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
     final repController = TextEditingController(
       text: existingExpense?.representativeName ?? '',
     );
-    final itemsController = TextEditingController(
-      text: existingExpense?.itemsDescription ?? '',
-    );
     final dateFormat = DateFormat('dd MMMM yyyy');
 
     showModalBottomSheet(
@@ -633,14 +631,53 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
 
                           const SizedBox(height: 14),
 
-                          // Amount Field
-                          Text(
-                            'TOTAL ROOM PRICE VALUE (TK) *',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: theme.textSecondary,
-                            ),
+                          // Amount Field Header with Calculator button
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'TOTAL ROOM PRICE VALUE (TK) *',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.textSecondary,
+                                ),
+                              ),
+                              InkWell(
+                                onTap: () async {
+                                  final cur = double.tryParse(amountController.text.trim());
+                                  final calcResult = await showCanteenCalculator(
+                                    context,
+                                    initialValue: cur,
+                                  );
+                                  if (calcResult != null) {
+                                    amountController.text = calcResult.toStringAsFixed(2);
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.bafNavy,
+                                    border: Border.all(color: AppColors.bafGold),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.calculate_outlined, color: AppColors.bafGold, size: 14),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'CALCULATOR',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.bafGold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 6),
                           TextField(
@@ -659,7 +696,7 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                             ),
                           ),
 
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 14),
 
                           // Representative
                           Text(
@@ -679,27 +716,7 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                             ),
                           ),
 
-                          const SizedBox(height: 12),
-
-                          // Items Description
-                          Text(
-                            'ITEMS PICKED / PARTICULARS',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: theme.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          TextField(
-                            controller: itemsController,
-                            decoration: const InputDecoration(
-                              hintText: 'e.g. Snacks, biscuits, tea, toiletries',
-                              isDense: true,
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 18),
 
                           // Actions
                           ModalActionBar(
@@ -714,9 +731,6 @@ class _DailyEntryViewState extends ConsumerState<DailyEntryView> {
                                 representativeName: repController.text.trim().isEmpty
                                     ? null
                                     : repController.text.trim(),
-                                itemsDescription: itemsController.text.trim().isEmpty
-                                    ? null
-                                    : itemsController.text.trim(),
                               );
                               if (ctx.mounted) {
                                 Navigator.of(ctx).pop();

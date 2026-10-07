@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/canteen_theme_extension.dart';
+import '../../../../core/widgets/canteen_calculator_dialog.dart';
 import '../../../../core/widgets/modal_action_bar.dart';
 import '../../constants/p_staff_constants.dart';
 import '../../models/p_staff_models.dart';
@@ -24,10 +25,12 @@ class _PStaffDailyEntryViewState extends ConsumerState<PStaffDailyEntryView> {
     super.dispose();
   }
 
-  void _showNewStaffDialog(BuildContext context, WidgetRef ref) {
+  void _showNewStaffDialog(BuildContext context, WidgetRef ref, {String? initialQuery}) {
     final theme = context.canteenTheme;
-    final nameCtrl = TextEditingController();
-    final bdNoCtrl = TextEditingController();
+    final trimmedQuery = initialQuery?.trim() ?? '';
+    final isBdPattern = trimmedQuery.toUpperCase().startsWith('BD') || RegExp(r'^\d+$').hasMatch(trimmedQuery);
+    final nameCtrl = TextEditingController(text: (!isBdPattern && trimmedQuery.isNotEmpty) ? trimmedQuery : '');
+    final bdNoCtrl = TextEditingController(text: isBdPattern ? trimmedQuery : '');
     final preDueCtrl = TextEditingController();
     String selectedRank = PStaffConstants.ranks.contains('Sgt') ? 'Sgt' : PStaffConstants.ranks.first;
     String selectedOffice = PStaffConstants.selectableOffices.first;
@@ -203,9 +206,6 @@ class _PStaffDailyEntryViewState extends ConsumerState<PStaffDailyEntryView> {
           ? existingExpense.amount.toStringAsFixed(2)
           : '',
     );
-    final itemsController = TextEditingController(
-      text: existingExpense?.particulars ?? '',
-    );
     final dateFormat = DateFormat('dd MMMM yyyy');
 
     showModalBottomSheet(
@@ -295,14 +295,53 @@ class _PStaffDailyEntryViewState extends ConsumerState<PStaffDailyEntryView> {
 
                           const SizedBox(height: 14),
 
-                          // Amount Field
-                          Text(
-                            'TODAY\'S CANTEEN PRICE (TK) *',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: theme.textSecondary,
-                            ),
+                          // Amount Field Header with Calculator button
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'TODAY\'S CANTEEN PRICE (TK) *',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.textSecondary,
+                                ),
+                              ),
+                              InkWell(
+                                onTap: () async {
+                                  final cur = double.tryParse(amountController.text.trim());
+                                  final calcResult = await showCanteenCalculator(
+                                    context,
+                                    initialValue: cur,
+                                  );
+                                  if (calcResult != null) {
+                                    amountController.text = calcResult.toStringAsFixed(2);
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.bafNavy,
+                                    border: Border.all(color: AppColors.bafGold),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.calculate_outlined, color: AppColors.bafGold, size: 14),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'CALCULATOR',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.bafGold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 6),
                           TextField(
@@ -321,27 +360,7 @@ class _PStaffDailyEntryViewState extends ConsumerState<PStaffDailyEntryView> {
                             ),
                           ),
 
-                          const SizedBox(height: 12),
-
-                          // Items / Particulars
-                          Text(
-                            'CANTEEN ITEMS / PARTICULARS',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: theme.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          TextField(
-                            controller: itemsController,
-                            decoration: const InputDecoration(
-                              hintText: 'e.g. Tea, special snacks, lunch, cold drinks',
-                              isDense: true,
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 18),
 
                           // Actions with matched even-sized buttons
                           ModalActionBar(
@@ -353,9 +372,6 @@ class _PStaffDailyEntryViewState extends ConsumerState<PStaffDailyEntryView> {
                               await ref.read(pStaffRegisterProvider.notifier).recordStaffExpense(
                                 staffId: staff.id,
                                 amount: amt,
-                                particulars: itemsController.text.trim().isEmpty
-                                    ? null
-                                    : itemsController.text.trim(),
                               );
                               if (ctx.mounted) {
                                 Navigator.of(ctx).pop();
@@ -578,17 +594,31 @@ class _PStaffDailyEntryViewState extends ConsumerState<PStaffDailyEntryView> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.badge_outlined, size: 44, color: AppColors.textMuted),
-                      const SizedBox(height: 8),
+                      const Icon(Icons.person_search_outlined, size: 48, color: AppColors.textMuted),
+                      const SizedBox(height: 10),
                       Text(
-                        'NO P-STAFF FOUND',
+                        _searchController.text.trim().isNotEmpty
+                            ? 'NO PERSON FOUND FOR "${_searchController.text.trim().toUpperCase()}"'
+                            : 'NO P-STAFF FOUND',
                         style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.textSecondary),
                       ),
-                      const SizedBox(height: 4),
-                      TextButton.icon(
-                        icon: const Icon(Icons.add, size: 14),
-                        label: const Text('ENROLL FIRST P-STAFF'),
-                        onPressed: () => _showNewStaffDialog(context, ref),
+                      const SizedBox(height: 12),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.person_add, size: 16),
+                        label: const Text('ADD PARTICULAR'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.bafGold,
+                          foregroundColor: AppColors.bafNavy,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          textStyle: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                        ),
+                        onPressed: () => _showNewStaffDialog(
+                          context,
+                          ref,
+                          initialQuery: _searchController.text.trim().isNotEmpty
+                              ? _searchController.text.trim()
+                              : null,
+                        ),
                       ),
                     ],
                   ),
@@ -667,17 +697,6 @@ class _PStaffDailyEntryViewState extends ConsumerState<PStaffDailyEntryView> {
                                               style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: theme.accentGold),
                                             ),
                                           ),
-                                          if (hasSpent && expense.particulars != null) ...[
-                                            const SizedBox(width: 6),
-                                            Expanded(
-                                              child: Text(
-                                                expense.particulars!,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(fontSize: 9.5, color: theme.textSecondary),
-                                              ),
-                                            ),
-                                          ],
                                         ],
                                       ),
                                     ],
