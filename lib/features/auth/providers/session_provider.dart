@@ -164,10 +164,12 @@ class SessionNotifier extends Notifier<SessionState> {
 
     // 2. Offline fallback
     SessionUser? matchedUser;
+    final userDigits = cleanUser.replaceAll(RegExp(r'[^0-9]'), '');
     final isNcoicLogin = cleanUser == 'ncoic' ||
-        cleanUser == '472770' ||
+        cleanUser == 'shanjid' ||
+        userDigits == '472770' ||
         cleanUser == 'bd/472770' ||
-        cleanUser == 'shanjid';
+        cleanUser == 'bd/ 472770';
     final isNcoicPass = cleanPass == 'ncoic123' ||
         cleanPass == 'NcoicPassword123' ||
         cleanPass == '472770' ||
@@ -177,6 +179,26 @@ class SessionNotifier extends Notifier<SessionState> {
       matchedUser = fixedAccounts[0];
     } else if (cleanUser == 'admin' && (cleanPass == 'admin123' || cleanPass == 'AdminPassword123')) {
       matchedUser = fixedAccounts.firstWhere((a) => a.role == 'ADMIN');
+    }
+
+    // Check locally enrolled operators in SharedPreferences
+    if (matchedUser == null) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final raw = prefs.getString('rts_canteen_operators_v2');
+        if (raw != null) {
+          final decoded = jsonDecode(raw) as List;
+          for (final item in decoded) {
+            final op = SessionUser.fromJson(item as Map<String, dynamic>);
+            final opBdDigits = op.bdNo.replaceAll(RegExp(r'[^0-9]'), '');
+            if ((op.username.toLowerCase() == cleanUser || (userDigits.isNotEmpty && userDigits == opBdDigits)) &&
+                cleanPass.length >= 4) {
+              matchedUser = op;
+              break;
+            }
+          }
+        }
+      } catch (_) {}
     }
 
     if (matchedUser == null) {

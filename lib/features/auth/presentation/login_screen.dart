@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/baf_rts_crest.dart';
+import '../providers/operator_management_provider.dart';
 import '../providers/session_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -12,7 +13,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _usernameCtrl = TextEditingController(text: 'ncoic');
+  final _usernameCtrl = TextEditingController(text: '472770');
   final _passwordCtrl = TextEditingController(text: 'ncoic123');
   bool _obscurePassword = true;
   String _selectedRole = 'NCOIC';
@@ -36,6 +37,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final sessionState = ref.watch(sessionProvider);
     final sessionNotifier = ref.read(sessionProvider.notifier);
+    final opState = ref.watch(operatorManagementProvider);
+    final jcoic = opState.operators.where((u) => u.role == 'JCOIC').firstOrNull;
 
     return Scaffold(
       backgroundColor: AppColors.bafNavy,
@@ -107,7 +110,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const Text(
-                          'DUTY ROLE ON LOGIN (LOCKED TO ACCOUNT)',
+                          'DUTY IN-CHARGE ACCOUNT',
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w900,
@@ -123,18 +126,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             Expanded(
                               child: _buildRoleSelectorTile(
                                 role: 'NCOIC',
-                                rank: 'Sgt In-Charge',
+                                name: 'Cpl Shanjid Ahmad',
+                                subtitle: 'BD/472770 • E&I Fitter',
                                 isSelected: _selectedRole == 'NCOIC',
-                                onTap: () => _selectRole('NCOIC', 'ncoic', 'ncoic123'),
+                                isVacant: false,
+                                onTap: () => _selectRole('NCOIC', '472770', 'ncoic123'),
                               ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: _buildRoleSelectorTile(
                                 role: 'JCOIC',
-                                rank: 'MWO In-Charge',
+                                name: jcoic != null ? '${jcoic.rank} ${jcoic.name}' : 'Vacant Position',
+                                subtitle: jcoic != null
+                                    ? '${jcoic.bdNo}${jcoic.trade != null ? ' • ${jcoic.trade}' : ''}'
+                                    : 'Appoint in Settings',
                                 isSelected: _selectedRole == 'JCOIC',
-                                onTap: () => _selectRole('JCOIC', 'jcoic', 'jcoic123'),
+                                isVacant: jcoic == null,
+                                onTap: () {
+                                  if (jcoic != null) {
+                                    _selectRole('JCOIC', jcoic.username, '');
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'JCOIC position is currently vacant. Please login as NCOIC (Cpl Shanjid Ahmad) to appoint JCOIC from Settings.',
+                                        ),
+                                        backgroundColor: AppColors.bafNavy,
+                                      ),
+                                    );
+                                  }
+                                },
                               ),
                             ),
                           ],
@@ -143,7 +165,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                         // Username Field
                         const Text(
-                          'MILITARY USERNAME / BD NO',
+                          'MILITARY BD NO / USERNAME',
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
@@ -155,7 +177,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           controller: _usernameCtrl,
                           decoration: const InputDecoration(
                             prefixIcon: Icon(Icons.person, size: 18, color: AppColors.bafNavy),
-                            hintText: 'Enter username (e.g. ncoic, jcoic)',
+                            hintText: 'Enter BD No (e.g. 472770) or Username',
                             isDense: true,
                           ),
                         ),
@@ -266,8 +288,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Widget _buildRoleSelectorTile({
     required String role,
-    required String rank,
+    required String name,
+    required String subtitle,
     required bool isSelected,
+    required bool isVacant,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -275,9 +299,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.bafNavy : Colors.white,
+          color: isSelected ? AppColors.bafNavy : (isVacant ? const Color(0xFFF1F5F9) : Colors.white),
           border: Border.all(
-            color: isSelected ? AppColors.bafGold : AppColors.ledgerBorder,
+            color: isSelected
+                ? AppColors.bafGold
+                : (isVacant ? AppColors.ledgerBorder : AppColors.ledgerBorder),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -288,25 +314,50 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               children: [
                 Icon(
                   isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                  size: 14,
+                  size: 13,
                   color: isSelected ? AppColors.bafGold : AppColors.textMuted,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   role,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 10,
                     fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
                     color: isSelected ? AppColors.bafGold : AppColors.bafNavy,
                   ),
                 ),
+                if (isVacant) ...[
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    color: AppColors.textMuted.withValues(alpha: 0.2),
+                    child: const Text(
+                      'VACANT',
+                      style: TextStyle(fontSize: 7.5, fontWeight: FontWeight.bold, color: AppColors.textMuted),
+                    ),
+                  ),
+                ],
               ],
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 3),
             Text(
-              rank,
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 9,
+                fontSize: 10.5,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? Colors.white : (isVacant ? AppColors.textMuted : AppColors.textPrimary),
+              ),
+            ),
+            const SizedBox(height: 1),
+            Text(
+              subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 8.5,
                 color: isSelected ? Colors.white70 : AppColors.textMuted,
               ),
             ),
