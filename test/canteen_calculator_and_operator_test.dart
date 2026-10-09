@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:food_canteen/core/widgets/canteen_calculator_dialog.dart';
 import 'package:food_canteen/features/auth/models/session_user.dart';
+import 'package:food_canteen/features/auth/presentation/login_screen.dart';
 import 'package:food_canteen/features/auth/providers/operator_management_provider.dart';
 
 void main() {
@@ -155,6 +156,32 @@ void main() {
       expect(stateFinal.isFullyStaffed, isTrue);
       expect(success, isFalse);
       expect(stateFinal.errorMessage, contains('Both NCOIC and JCOIC positions are already occupied'));
+
+      // Removing JCOIC restores vacant slot
+      final removed = await notifier.removeOperator('jcoic');
+      expect(removed, isTrue);
+      final stateAfterRemoval = container.read(operatorManagementProvider);
+      expect(stateAfterRemoval.hasJcoic, isFalse);
+      expect(stateAfterRemoval.vacantRole, equals('JCOIC'));
+    });
+  });
+
+  group('Login Screen Duty Selector Widget Tests', () {
+    testWidgets('LoginScreen displays Cpl Shanjid Ahmad particulars and vacant JCOIC', (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: LoginScreen(),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Cpl Shanjid Ahmad'), findsOneWidget);
+      expect(find.text('BD/472770 • E&I Fitter'), findsOneWidget);
+      expect(find.text('Vacant Position'), findsOneWidget);
+      expect(find.text('VACANT'), findsOneWidget);
     });
   });
 }
