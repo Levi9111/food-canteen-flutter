@@ -369,6 +369,331 @@ class PStaffPdfExportService {
     return pdf.save();
   }
 
+  static Future<Uint8List> generatePStaffMonthlyMatrixPdf({
+    required List<PStaffProfile> staffList,
+    required String office,
+    required int year,
+    required int month,
+    required Map<String, Map<int, double>> expensesMap,
+    required double totalPreDue,
+    required double totalMonthExpenses,
+    required double totalPaid,
+    required double totalNetDue,
+  }) async {
+    final pdf = pw.Document(
+      title: 'BAF RTS Canteen - P-Staff Monthly Matrix ($office - ${monthNames[month - 1]} $year)',
+      author: 'Bangladesh Air Force RTS Canteen',
+    );
+
+    final currencyFormat = NumberFormat('#,##0.00', 'en_US');
+    final monthName = monthNames[month - 1];
+    final daysInMonth = DateTime(year, month + 1, 0).day;
+
+    pw.MemoryImage? crestImage;
+    try {
+      final crestData = await rootBundle.load('assets/images/baf_crest.png');
+      crestImage = pw.MemoryImage(crestData.buffer.asUint8List());
+    } catch (_) {
+      try {
+        final crestData = await rootBundle.load('assets/images/baf_logo.png');
+        crestImage = pw.MemoryImage(crestData.buffer.asUint8List());
+      } catch (_) {
+        crestImage = null;
+      }
+    }
+
+    final navyColor = PdfColor.fromHex('#001F3F');
+    final deepBlue = PdfColor.fromHex('#0B3C5D');
+    final goldColor = PdfColor.fromHex('#D4AF37');
+    final lightBlueBg = PdfColor.fromHex('#EAF2F8');
+    final stripeBg = PdfColor.fromHex('#F4F6F9');
+    final borderGrey = PdfColor.fromHex('#BDC3C7');
+    final redDebit = PdfColor.fromHex('#C0392B');
+    final greenCredit = PdfColor.fromHex('#27AE60');
+
+    final dayWidth = daysInMonth == 31 ? 13.0 : (daysInMonth == 30 ? 13.5 : 14.5);
+    final Map<int, pw.TableColumnWidth> colWidths = {
+      0: const pw.FixedColumnWidth(16),
+      1: const pw.FixedColumnWidth(44),
+      2: const pw.FixedColumnWidth(80),
+      3: const pw.FixedColumnWidth(42),
+      4: const pw.FixedColumnWidth(36),
+    };
+    for (int d = 1; d <= daysInMonth; d++) {
+      colWidths[4 + d] = pw.FixedColumnWidth(dayWidth);
+    }
+    colWidths[5 + daysInMonth] = const pw.FixedColumnWidth(40);
+    colWidths[6 + daysInMonth] = const pw.FixedColumnWidth(40);
+    colWidths[7 + daysInMonth] = const pw.FixedColumnWidth(38);
+    colWidths[8 + daysInMonth] = const pw.FixedColumnWidth(42);
+
+    final Map<int, double> dayTotals = {};
+    for (int d = 1; d <= daysInMonth; d++) {
+      double sum = 0.0;
+      for (final staff in staffList) {
+        sum += expensesMap[staff.id]?[d] ?? 0.0;
+      }
+      dayTotals[d] = sum;
+    }
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4.landscape,
+        margin: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              pw.Container(
+                padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: pw.BoxDecoration(
+                  color: navyColor,
+                  border: pw.Border.all(color: goldColor, width: 1.5),
+                ),
+                child: pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: [
+                    if (crestImage != null)
+                      pw.Container(
+                        width: 40,
+                        height: 40,
+                        margin: const pw.EdgeInsets.only(right: 10),
+                        child: pw.Image(crestImage, fit: pw.BoxFit.contain),
+                      ),
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            "PEOPLE'S REPUBLIC OF BANGLADESH • BANGLADESH AIR FORCE",
+                            style: pw.TextStyle(
+                              color: goldColor,
+                              fontSize: 7,
+                              fontWeight: pw.FontWeight.bold,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                          pw.SizedBox(height: 1),
+                          pw.Text(
+                            'RECRUITS TRAINING SCHOOL (RTS)',
+                            style: pw.TextStyle(
+                              color: PdfColors.white,
+                              fontSize: 12,
+                              fontWeight: pw.FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          pw.SizedBox(height: 1),
+                          pw.Text(
+                            'FOOD CANTEEN • PERMANENT STAFF (P-STAFF) MONTHLY EXPENDITURE MATRIX',
+                            style: pw.TextStyle(
+                              color: PdfColors.white,
+                              fontSize: 8,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: pw.BoxDecoration(
+                        color: deepBlue,
+                        border: pw.Border.all(color: goldColor, width: 1),
+                      ),
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.end,
+                        children: [
+                          pw.Text(
+                            'OFFICE: $office',
+                            style: pw.TextStyle(
+                              color: goldColor,
+                              fontSize: 8.5,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
+                          ),
+                          pw.Text(
+                            '${monthName.toUpperCase()} $year',
+                            style: const pw.TextStyle(
+                              color: PdfColors.white,
+                              fontSize: 8,
+                            ),
+                          ),
+                          pw.Text(
+                            'STRENGTH: ${staffList.length} STAFF',
+                            style: const pw.TextStyle(
+                              color: PdfColors.white,
+                              fontSize: 7,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              pw.SizedBox(height: 5),
+
+              pw.Container(
+                padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: pw.BoxDecoration(
+                  color: stripeBg,
+                  border: pw.Border.all(color: borderGrey, width: 0.7),
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildPdfMeta('1. PREVIOUS DUE', 'Tk ${currencyFormat.format(totalPreDue)}'),
+                    _buildPdfMeta('2. MONTH CONSUMPTION', 'Tk ${currencyFormat.format(totalMonthExpenses)}'),
+                    _buildPdfMeta('3. GROSS TOTAL', 'Tk ${currencyFormat.format(totalPreDue + totalMonthExpenses)}'),
+                    _buildPdfMeta('4. TOTAL PAID / DEPOSIT', 'Tk ${currencyFormat.format(totalPaid)}'),
+                    _buildPdfMeta('5. NET DUE / BALANCE', 'Tk ${currencyFormat.format(totalNetDue)}'),
+                  ],
+                ),
+              ),
+
+              pw.SizedBox(height: 5),
+
+              pw.Expanded(
+                child: pw.Table(
+                  border: pw.TableBorder.all(color: borderGrey, width: 0.4),
+                  columnWidths: colWidths,
+                  children: [
+                    pw.TableRow(
+                      decoration: pw.BoxDecoration(color: navyColor),
+                      children: [
+                        _buildPdfCell('SL', isHeader: true, align: pw.TextAlign.center, fontSize: 6.5, padding: const pw.EdgeInsets.all(2)),
+                        _buildPdfCell('BD NO', isHeader: true, fontSize: 6.5, padding: const pw.EdgeInsets.all(2)),
+                        _buildPdfCell('RANK & NAME', isHeader: true, fontSize: 6.5, padding: const pw.EdgeInsets.all(2)),
+                        _buildPdfCell('OFFICE', isHeader: true, fontSize: 6.5, padding: const pw.EdgeInsets.all(2)),
+                        _buildPdfCell('PRE DUE', isHeader: true, align: pw.TextAlign.right, fontSize: 6.5, padding: const pw.EdgeInsets.all(2)),
+                        ...List.generate(daysInMonth, (d) =>
+                          _buildPdfCell('${d + 1}', isHeader: true, align: pw.TextAlign.center, fontSize: 6.0, padding: const pw.EdgeInsets.all(1))
+                        ),
+                        _buildPdfCell('MONTH', isHeader: true, align: pw.TextAlign.right, fontSize: 6.5, padding: const pw.EdgeInsets.all(2)),
+                        _buildPdfCell('TOTAL', isHeader: true, align: pw.TextAlign.right, fontSize: 6.5, padding: const pw.EdgeInsets.all(2)),
+                        _buildPdfCell('PAID', isHeader: true, align: pw.TextAlign.right, fontSize: 6.5, padding: const pw.EdgeInsets.all(2)),
+                        _buildPdfCell('NET DUE', isHeader: true, align: pw.TextAlign.right, fontSize: 6.5, padding: const pw.EdgeInsets.all(2)),
+                      ],
+                    ),
+
+                    ...staffList.asMap().entries.map((entry) {
+                      final idx = entry.key;
+                      final staff = entry.value;
+                      final staffDays = expensesMap[staff.id] ?? {};
+                      double monthExp = 0.0;
+                      for (final amt in staffDays.values) {
+                        monthExp += amt;
+                      }
+                      final grandTotal = staff.preDue + monthExp;
+                      final netDue = grandTotal - staff.paid;
+                      final isEven = idx % 2 == 0;
+                      final rowBg = isEven ? stripeBg : PdfColors.white;
+
+                      return pw.TableRow(
+                        decoration: pw.BoxDecoration(color: rowBg),
+                        children: [
+                          _buildPdfCell('${idx + 1}', align: pw.TextAlign.center, fontSize: 6.5, padding: const pw.EdgeInsets.all(2)),
+                          _buildPdfCell(staff.bdNo, fontSize: 6.5, isBold: true, padding: const pw.EdgeInsets.all(2)),
+                          _buildPdfCell('${staff.rank} ${staff.name}', fontSize: 6.5, padding: const pw.EdgeInsets.all(2)),
+                          _buildPdfCell(staff.office, fontSize: 6.0, padding: const pw.EdgeInsets.all(2)),
+                          _buildPdfCell(staff.preDue > 0 ? staff.preDue.toStringAsFixed(0) : '-', align: pw.TextAlign.right, fontSize: 6.5, color: staff.preDue > 0 ? redDebit : PdfColors.grey700, padding: const pw.EdgeInsets.all(2)),
+                          ...List.generate(daysInMonth, (d) {
+                            final amt = staffDays[d + 1] ?? 0.0;
+                            return _buildPdfCell(
+                              amt > 0 ? amt.toStringAsFixed(0) : '-',
+                              align: pw.TextAlign.center,
+                              fontSize: 6.0,
+                              isBold: amt > 0,
+                              color: amt > 0 ? PdfColors.black : PdfColors.grey500,
+                              padding: const pw.EdgeInsets.all(1),
+                            );
+                          }),
+                          _buildPdfCell(monthExp > 0 ? monthExp.toStringAsFixed(0) : '0', align: pw.TextAlign.right, fontSize: 6.5, isBold: true, color: redDebit, padding: const pw.EdgeInsets.all(2)),
+                          _buildPdfCell(grandTotal > 0 ? grandTotal.toStringAsFixed(0) : '0', align: pw.TextAlign.right, fontSize: 6.5, isBold: true, padding: const pw.EdgeInsets.all(2)),
+                          _buildPdfCell(staff.paid > 0 ? staff.paid.toStringAsFixed(0) : '-', align: pw.TextAlign.right, fontSize: 6.5, color: greenCredit, padding: const pw.EdgeInsets.all(2)),
+                          _buildPdfCell(
+                            netDue.toStringAsFixed(0),
+                            align: pw.TextAlign.right,
+                            fontSize: 7.0,
+                            isBold: true,
+                            color: netDue > 0 ? redDebit : greenCredit,
+                            padding: const pw.EdgeInsets.all(2),
+                          ),
+                        ],
+                      );
+                    }),
+
+                    pw.TableRow(
+                      decoration: pw.BoxDecoration(color: lightBlueBg),
+                      children: [
+                        _buildPdfCell('', padding: const pw.EdgeInsets.all(2)),
+                        _buildPdfCell('TOTAL', fontSize: 7.0, isBold: true, color: navyColor, padding: const pw.EdgeInsets.all(2)),
+                        _buildPdfCell('${staffList.length} Personnel', fontSize: 6.5, isBold: true, color: navyColor, padding: const pw.EdgeInsets.all(2)),
+                        _buildPdfCell('', padding: const pw.EdgeInsets.all(2)),
+                        _buildPdfCell(totalPreDue > 0 ? totalPreDue.toStringAsFixed(0) : '0', align: pw.TextAlign.right, fontSize: 6.5, isBold: true, color: redDebit, padding: const pw.EdgeInsets.all(2)),
+                        ...List.generate(daysInMonth, (d) {
+                          final daySum = dayTotals[d + 1] ?? 0.0;
+                          return _buildPdfCell(
+                            daySum > 0 ? daySum.toStringAsFixed(0) : '-',
+                            align: pw.TextAlign.center,
+                            fontSize: 6.0,
+                            isBold: true,
+                            color: daySum > 0 ? navyColor : PdfColors.grey500,
+                            padding: const pw.EdgeInsets.all(1),
+                          );
+                        }),
+                        _buildPdfCell(totalMonthExpenses.toStringAsFixed(0), align: pw.TextAlign.right, fontSize: 7.0, isBold: true, color: redDebit, padding: const pw.EdgeInsets.all(2)),
+                        _buildPdfCell((totalPreDue + totalMonthExpenses).toStringAsFixed(0), align: pw.TextAlign.right, fontSize: 7.0, isBold: true, color: navyColor, padding: const pw.EdgeInsets.all(2)),
+                        _buildPdfCell(totalPaid.toStringAsFixed(0), align: pw.TextAlign.right, fontSize: 7.0, isBold: true, color: greenCredit, padding: const pw.EdgeInsets.all(2)),
+                        _buildPdfCell(
+                          totalNetDue.toStringAsFixed(0),
+                          align: pw.TextAlign.right,
+                          fontSize: 7.5,
+                          isBold: true,
+                          color: totalNetDue > 0 ? redDebit : greenCredit,
+                          padding: const pw.EdgeInsets.all(2),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              pw.SizedBox(height: 6),
+
+              pw.Container(
+                padding: const pw.EdgeInsets.only(top: 8),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildPdfSignature('PREPARED BY', 'Canteen Accounting Clerk', 'RTS Food Canteen'),
+                    _buildPdfSignature('VERIFIED BY (NCOIC)', 'Cpl Shanjid Ahmad (472770)', 'E&I Fitter • RTS BAF'),
+                    _buildPdfSignature('SUPERVISED BY (JCOIC)', 'Master Warrant Officer', 'RTS Food Canteen'),
+                    _buildPdfSignature('COUNTERSIGNED (OC)', 'Officer Commanding', 'RTS, Bangladesh Air Force'),
+                  ],
+                ),
+              ),
+
+              pw.SizedBox(height: 3),
+
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                  'SECURITY CLASSIFICATION: OFFICIAL USE ONLY • RECRUITS TRAINING SCHOOL (RTS) • BANGLADESH AIR FORCE',
+                  style: const pw.TextStyle(fontSize: 6.0, color: PdfColors.grey700),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+
   static Future<String> downloadPdfToDevice({
     required Uint8List pdfBytes,
     required String filename,
@@ -421,9 +746,10 @@ class PStaffPdfExportService {
     pw.TextAlign align = pw.TextAlign.left,
     double fontSize = 8,
     PdfColor? color,
+    pw.EdgeInsets? padding,
   }) {
     return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 3.5),
+      padding: padding ?? const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 3.5),
       child: pw.Text(
         text,
         textAlign: align,

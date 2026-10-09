@@ -7,6 +7,7 @@ import '../../../../core/widgets/modal_action_bar.dart';
 import '../../constants/p_staff_constants.dart';
 import '../../models/p_staff_models.dart';
 import '../../providers/p_staff_register_provider.dart';
+import '../../services/p_staff_pdf_export_service.dart';
 
 class PStaffMonthlyMatrixView extends ConsumerStatefulWidget {
   const PStaffMonthlyMatrixView({super.key});
@@ -17,6 +18,7 @@ class PStaffMonthlyMatrixView extends ConsumerStatefulWidget {
 
 class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixView> {
   bool _forceMatrixTable = false;
+  bool _isGeneratingPdf = false;
 
   void _showStaffAccountEditModal(BuildContext context, WidgetRef ref, PStaffProfile staff) {
     final theme = context.canteenTheme;
@@ -267,6 +269,7 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
     final state = ref.watch(pStaffRegisterProvider);
     final notifier = ref.read(pStaffRegisterProvider.notifier);
     final currencyFormat = NumberFormat('#,##0.00', 'en_US');
+    final theme = context.canteenTheme;
 
     final daysInMonth = DateTime(state.selectedYear, state.selectedMonth + 1, 0).day;
     final filteredStaff = state.filteredStaffProfiles;
@@ -292,24 +295,33 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
             // 1. Period Navigator & Office Filter
             Container(
               padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 14, vertical: 6),
-              decoration: const BoxDecoration(
-                color: AppColors.ledgerSurface,
-                border: Border(bottom: BorderSide(color: AppColors.ledgerBorderLight)),
+              decoration: BoxDecoration(
+                color: theme.surface,
+                border: Border(bottom: BorderSide(color: theme.cardBorderLight)),
               ),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    const Text('OFFICE:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+                    Text('OFFICE:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
                     const SizedBox(width: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.ledgerBorder)),
+                      decoration: BoxDecoration(
+                        color: theme.cardBackground,
+                        border: Border.all(color: theme.cardBorder),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
                       child: DropdownButton<String>(
                         value: state.selectedOffice,
+                        dropdownColor: theme.cardBackground,
+                        iconEnabledColor: theme.textPrimary,
                         isDense: true,
                         underline: const SizedBox(),
-                        items: PStaffConstants.offices.map((o) => DropdownMenuItem(value: o, child: Text(o, style: const TextStyle(fontSize: 11)))).toList(),
+                        items: PStaffConstants.offices.map((o) => DropdownMenuItem(
+                          value: o,
+                          child: Text(o, style: TextStyle(fontSize: 11, color: theme.textPrimary, fontWeight: FontWeight.w600)),
+                        )).toList(),
                         onChanged: (val) {
                           if (val != null) notifier.setSelectedOffice(val);
                         },
@@ -318,17 +330,26 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
 
                     const SizedBox(width: 8),
 
-                    const Text('PERIOD:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+                    Text('PERIOD:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
                     const SizedBox(width: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.ledgerBorder)),
+                      decoration: BoxDecoration(
+                        color: theme.cardBackground,
+                        border: Border.all(color: theme.cardBorder),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
                       child: DropdownButton<int>(
                         value: state.selectedMonth,
+                        dropdownColor: theme.cardBackground,
+                        iconEnabledColor: theme.textPrimary,
                         isDense: true,
                         underline: const SizedBox(),
                         items: List.generate(12, (i) => i + 1).map((m) {
-                          return DropdownMenuItem(value: m, child: Text(monthsList[m - 1], style: const TextStyle(fontSize: 11)));
+                          return DropdownMenuItem(
+                            value: m,
+                            child: Text(monthsList[m - 1], style: TextStyle(fontSize: 11, color: theme.textPrimary, fontWeight: FontWeight.w600)),
+                          );
                         }).toList(),
                         onChanged: (val) {
                           if (val != null) notifier.setSelectedMonth(state.selectedYear, val);
@@ -338,13 +359,22 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
                     const SizedBox(width: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.ledgerBorder)),
+                      decoration: BoxDecoration(
+                        color: theme.cardBackground,
+                        border: Border.all(color: theme.cardBorder),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
                       child: DropdownButton<int>(
                         value: state.selectedYear,
+                        dropdownColor: theme.cardBackground,
+                        iconEnabledColor: theme.textPrimary,
                         isDense: true,
                         underline: const SizedBox(),
                         items: [2025, 2026, 2027].map((y) {
-                          return DropdownMenuItem(value: y, child: Text('$y', style: const TextStyle(fontSize: 11)));
+                          return DropdownMenuItem(
+                            value: y,
+                            child: Text('$y', style: TextStyle(fontSize: 11, color: theme.textPrimary, fontWeight: FontWeight.w600)),
+                          );
                         }).toList(),
                         onChanged: (val) {
                           if (val != null) notifier.setSelectedMonth(val, state.selectedMonth);
@@ -361,6 +391,7 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
                         decoration: BoxDecoration(
                           color: _forceMatrixTable ? AppColors.bafDeepBlue : AppColors.bafNavy,
                           border: Border.all(color: AppColors.bafGold),
+                          borderRadius: BorderRadius.circular(3),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -374,6 +405,45 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
                             Text(
                               _forceMatrixTable ? 'CARD VIEW' : 'FULL TABLE',
                               style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    // Download PDF Button
+                    InkWell(
+                      onTap: _isGeneratingPdf ? null : () => _handleDownloadPdf(state),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.bafGold,
+                          border: Border.all(color: AppColors.bafGold),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _isGeneratingPdf
+                                ? const SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 1.5,
+                                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.bafNavy),
+                                    ),
+                                  )
+                                : const Icon(Icons.download, size: 13, color: AppColors.bafNavy),
+                            const SizedBox(width: 4),
+                            Text(
+                              _isGeneratingPdf ? 'SAVING...' : 'DOWNLOAD PDF',
+                              style: const TextStyle(
+                                color: AppColors.bafNavy,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
                           ],
                         ),
@@ -450,8 +520,11 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
     int daysInMonth,
     NumberFormat currencyFormat,
   ) {
+    final theme = context.canteenTheme;
     if (staffList.isEmpty) {
-      return const Center(child: Text('No P-Staff profiles in selected office'));
+      return Center(
+        child: Text('No P-Staff profiles in selected office', style: TextStyle(color: theme.textSecondary)),
+      );
     }
 
     return ListView.builder(
@@ -473,11 +546,12 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
           padding: const EdgeInsets.only(bottom: 7),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardBackground,
               border: Border.all(
-                color: netDue > 0 ? AppColors.bafGold : AppColors.ledgerBorder,
+                color: netDue > 0 ? AppColors.bafGold : theme.cardBorder,
                 width: netDue > 0 ? 1.5 : 1.0,
               ),
+              borderRadius: BorderRadius.circular(4),
             ),
             child: Padding(
               padding: const EdgeInsets.all(10),
@@ -498,7 +572,7 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
                       Expanded(
                         child: Text(
                           '${staff.rank} ${staff.name}',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: AppColors.bafNavy),
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: theme.textPrimary),
                         ),
                       ),
                       InkWell(
@@ -506,28 +580,32 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppColors.bafLightBlue,
-                            border: Border.all(color: AppColors.bafDeepBlue),
+                            color: theme.stripe,
+                            border: Border.all(color: AppColors.bafGold),
+                            borderRadius: BorderRadius.circular(2),
                           ),
-                          child: const Text('EDIT', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.bafDeepBlue)),
+                          child: const Text('EDIT', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.bafGold)),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 2),
-                  Text(staff.office, style: const TextStyle(fontSize: 9.5, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+                  Text(staff.office, style: TextStyle(fontSize: 9.5, color: theme.textSecondary, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
 
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                    color: AppColors.ledgerBackground,
+                    decoration: BoxDecoration(
+                      color: theme.stripe,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                     child: Row(
                       children: [
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('PRE DUE', style: TextStyle(fontSize: 8, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
+                              Text('PRE DUE', style: TextStyle(fontSize: 8, color: theme.textMuted, fontWeight: FontWeight.bold)),
                               Text('৳ ${currencyFormat.format(staff.preDue)}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.balanceAlert)),
                             ],
                           ),
@@ -536,7 +614,7 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('THIS MONTH', style: TextStyle(fontSize: 8, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
+                              Text('THIS MONTH', style: TextStyle(fontSize: 8, color: theme.textMuted, fontWeight: FontWeight.bold)),
                               Text('৳ ${currencyFormat.format(monthTotal)}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.debitRed)),
                             ],
                           ),
@@ -545,7 +623,7 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('PAID', style: TextStyle(fontSize: 8, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
+                              Text('PAID', style: TextStyle(fontSize: 8, color: theme.textMuted, fontWeight: FontWeight.bold)),
                               Text('৳ ${currencyFormat.format(staff.paid)}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.creditGreen)),
                             ],
                           ),
@@ -554,8 +632,8 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('NET DUE', style: TextStyle(fontSize: 8, color: AppColors.bafNavy, fontWeight: FontWeight.bold)),
-                              Text('৳ ${currencyFormat.format(netDue)}', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900, color: AppColors.bafNavy)),
+                              Text('NET DUE', style: TextStyle(fontSize: 8, color: theme.textPrimary, fontWeight: FontWeight.bold)),
+                              Text('৳ ${currencyFormat.format(netDue)}', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900, color: netDue > 0 ? AppColors.debitRed : AppColors.creditGreen)),
                             ],
                           ),
                         ),
@@ -567,7 +645,7 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('$activeDays canteen visit${activeDays == 1 ? '' : 's'}', style: const TextStyle(fontSize: 9, color: AppColors.textMuted)),
+                      Text('$activeDays canteen visit${activeDays == 1 ? '' : 's'}', style: TextStyle(fontSize: 9, color: theme.textMuted)),
                       Text(
                         netDue <= 0 ? 'CLEARED' : 'PENDING',
                         style: TextStyle(
@@ -595,6 +673,7 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
     int daysInMonth,
     NumberFormat currencyFormat,
   ) {
+    final theme = context.canteenTheme;
     return SingleChildScrollView(
       scrollDirection: Axis.vertical,
       child: SingleChildScrollView(
@@ -602,8 +681,8 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
         child: Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.ledgerSurface,
-            border: Border.all(color: AppColors.ledgerBorder, width: 1.0),
+            color: theme.cardBackground,
+            border: Border.all(color: theme.cardBorder, width: 1.0),
           ),
           child: DataTable(
             headingRowHeight: 36,
@@ -638,16 +717,16 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
                     DataCell(
                       InkWell(
                         onTap: () => _showStaffAccountEditModal(context, ref, staff),
-                        child: Text(staff.bdNo, style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: AppColors.bafDeepBlue)),
+                        child: Text(staff.bdNo, style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: AppColors.bafSkyBlue)),
                       ),
                     ),
                     DataCell(
                       InkWell(
                         onTap: () => _showStaffAccountEditModal(context, ref, staff),
-                        child: Text('${staff.rank} ${staff.name}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppColors.bafNavy)),
+                        child: Text('${staff.rank} ${staff.name}', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textPrimary)),
                       ),
                     ),
-                    DataCell(Text(staff.office, style: const TextStyle(fontSize: 9, color: AppColors.textSecondary))),
+                    DataCell(Text(staff.office, style: TextStyle(fontSize: 9, color: theme.textSecondary))),
                     DataCell(Text(staff.preDue > 0 ? staff.preDue.toStringAsFixed(0) : '-', style: const TextStyle(fontSize: 9.5, color: AppColors.balanceAlert, fontWeight: FontWeight.bold))),
                     ...List.generate(daysInMonth, (d) {
                       final date = DateTime(state.selectedYear, state.selectedMonth, d + 1);
@@ -659,13 +738,13 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
                           child: Container(
                             alignment: Alignment.center,
                             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                            color: hasVal ? AppColors.bafLightBlue.withAlpha(120) : Colors.transparent,
+                            color: hasVal ? theme.tableHighlight : Colors.transparent,
                             child: Text(
                               hasVal ? exp.amount.toStringAsFixed(0) : '-',
                               style: TextStyle(
                                 fontSize: 9.5,
                                 fontWeight: hasVal ? FontWeight.bold : FontWeight.normal,
-                                color: hasVal ? AppColors.debitRed : AppColors.textMuted,
+                                color: hasVal ? AppColors.debitRed : theme.textMuted,
                               ),
                             ),
                           ),
@@ -673,7 +752,7 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
                       );
                     }),
                     DataCell(Text(currencyFormat.format(monthTotal), style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: AppColors.debitRed))),
-                    DataCell(Text(currencyFormat.format(grandTotal), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.bafNavy))),
+                    DataCell(Text(currencyFormat.format(grandTotal), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: theme.textPrimary))),
                     DataCell(Text(staff.paid > 0 ? currencyFormat.format(staff.paid) : '-', style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: AppColors.creditGreen))),
                     DataCell(Text(currencyFormat.format(netDue), style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900, color: netDue > 0 ? AppColors.debitRed : AppColors.cleared))),
                   ],
@@ -684,5 +763,93 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
         ),
       ),
     );
+  }
+
+  Future<void> _handleDownloadPdf(PStaffRegisterState state) async {
+    setState(() => _isGeneratingPdf = true);
+    try {
+      final daysInMonth = DateTime(state.selectedYear, state.selectedMonth + 1, 0).day;
+      final staffList = state.filteredStaffProfiles;
+
+      final Map<String, Map<int, double>> expensesMap = {};
+      for (final staff in staffList) {
+        final Map<int, double> dayMap = {};
+        for (int d = 1; d <= daysInMonth; d++) {
+          final exp = state.getExpense(staff.id, DateTime(state.selectedYear, state.selectedMonth, d));
+          if (exp != null && exp.amount > 0) {
+            dayMap[d] = exp.amount;
+          }
+        }
+        expensesMap[staff.id] = dayMap;
+      }
+
+      final totalPreDue = state.getAllStaffPreDueTotal();
+      final totalMonthExpenses = state.getAllStaffMonthGrandTotal(state.selectedYear, state.selectedMonth);
+      final totalPaid = state.getAllStaffPaidTotal();
+      final totalNetDue = state.getAllStaffNetDueTotal(state.selectedYear, state.selectedMonth);
+
+      final pdfBytes = await PStaffPdfExportService.generatePStaffMonthlyMatrixPdf(
+        staffList: staffList,
+        office: state.selectedOffice,
+        year: state.selectedYear,
+        month: state.selectedMonth,
+        expensesMap: expensesMap,
+        totalPreDue: totalPreDue,
+        totalMonthExpenses: totalMonthExpenses,
+        totalPaid: totalPaid,
+        totalNetDue: totalNetDue,
+      );
+
+      final safeOffice = state.selectedOffice.replaceAll(' ', '_').replaceAll('/', '_');
+      final filename =
+          'BAF_RTS_PStaff_${safeOffice}_${state.selectedYear}_${state.selectedMonth.toString().padLeft(2, '0')}.pdf';
+
+      final savedPath = await PStaffPdfExportService.downloadPdfToDevice(
+        pdfBytes: pdfBytes,
+        filename: filename,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.bafNavy,
+          duration: const Duration(seconds: 4),
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_outline, color: AppColors.bafGold, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'P-STAFF STATEMENT PDF DOWNLOAD COMPLETE',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.white),
+                    ),
+                    Text(
+                      'Saved to: $savedPath',
+                      style: const TextStyle(fontSize: 9.5, color: AppColors.bafSkyBlue),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red.shade900,
+          content: Text('Failed to download PDF: $e'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isGeneratingPdf = false);
+    }
   }
 }
