@@ -186,6 +186,24 @@ class AppTheme {
           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
         ),
       ),
+      dividerTheme: const DividerThemeData(
+        color: Color(0xFF2D4668),
+        thickness: 1,
+        space: 1,
+      ),
+      dataTableTheme: DataTableThemeData(
+        headingRowColor: WidgetStateProperty.all(const Color(0xFF060D17)),
+        headingTextStyle: AppTextStyles.labelSmall(Colors.white),
+        dataRowColor: WidgetStateProperty.resolveWith<Color?>((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const Color(0xFF1E3A5F);
+          }
+          return const Color(0xFF132238);
+        }),
+        dataTextStyle: AppTextStyles.bodyMedium(const Color(0xFFF8FAFC)),
+        horizontalMargin: 12,
+        columnSpacing: 16,
+      ),
       extensions: const [
         CanteenThemeColors.dark,
       ],
