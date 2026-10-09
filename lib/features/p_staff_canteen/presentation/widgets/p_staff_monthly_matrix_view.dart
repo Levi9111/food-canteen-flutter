@@ -81,7 +81,11 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
                             children: [
                               Text('FULL NAME:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
                               const SizedBox(height: 4),
-                              TextField(controller: nameCtrl, decoration: const InputDecoration(isDense: true)),
+                              TextField(
+                                controller: nameCtrl,
+                                style: TextStyle(color: theme.textPrimary, fontSize: 13),
+                                decoration: const InputDecoration(isDense: true),
+                              ),
                               const SizedBox(height: 10),
 
                               Text('RANK:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
@@ -91,7 +95,9 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
                                 decoration: BoxDecoration(color: theme.cardBackground, border: Border.all(color: theme.cardBorder)),
                                 child: DropdownButton<String>(
                                   value: PStaffConstants.ranks.contains(selectedRank) ? selectedRank : PStaffConstants.ranks.first,
-                                  dropdownColor: theme.surface,
+                                  dropdownColor: theme.cardBackground,
+                                  iconEnabledColor: theme.textPrimary,
+                                  style: TextStyle(color: theme.textPrimary, fontSize: 12, fontWeight: FontWeight.w600),
                                   isExpanded: true,
                                   underline: const SizedBox(),
                                   items: PStaffConstants.ranks.map((r) => DropdownMenuItem(value: r, child: Text(r, style: TextStyle(color: theme.textPrimary)))).toList(),
@@ -109,7 +115,9 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
                                 decoration: BoxDecoration(color: theme.cardBackground, border: Border.all(color: theme.cardBorder)),
                                 child: DropdownButton<String>(
                                   value: PStaffConstants.selectableOffices.contains(selectedOffice) ? selectedOffice : PStaffConstants.selectableOffices.first,
-                                  dropdownColor: theme.surface,
+                                  dropdownColor: theme.cardBackground,
+                                  iconEnabledColor: theme.textPrimary,
+                                  style: TextStyle(color: theme.textPrimary, fontSize: 12, fontWeight: FontWeight.w600),
                                   isExpanded: true,
                                   underline: const SizedBox(),
                                   items: PStaffConstants.selectableOffices.map((o) => DropdownMenuItem(value: o, child: Text(o, style: TextStyle(color: theme.textPrimary)))).toList(),
@@ -122,12 +130,22 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
 
                               Text('PREVIOUS DUE (TK):', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
                               const SizedBox(height: 4),
-                              TextField(controller: preDueCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(isDense: true, prefixText: '৳ ')),
+                              TextField(
+                                controller: preDueCtrl,
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                style: TextStyle(color: theme.textPrimary, fontSize: 13),
+                                decoration: const InputDecoration(isDense: true, prefixText: '৳ '),
+                              ),
                               const SizedBox(height: 10),
 
                               Text('PAID AMOUNT (TK):', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
                               const SizedBox(height: 4),
-                              TextField(controller: paidCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(isDense: true, prefixText: '৳ ')),
+                              TextField(
+                                controller: paidCtrl,
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                style: TextStyle(color: theme.textPrimary, fontSize: 13),
+                                decoration: const InputDecoration(isDense: true, prefixText: '৳ '),
+                              ),
                               const SizedBox(height: 16),
 
                               ModalActionBar(
@@ -299,159 +317,320 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
                 color: theme.surface,
                 border: Border(bottom: BorderSide(color: theme.cardBorderLight)),
               ),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    Text('OFFICE:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
-                    const SizedBox(width: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: theme.cardBackground,
-                        border: Border.all(color: theme.cardBorder),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: DropdownButton<String>(
-                        value: state.selectedOffice,
-                        dropdownColor: theme.cardBackground,
-                        iconEnabledColor: theme.textPrimary,
-                        isDense: true,
-                        underline: const SizedBox(),
-                        items: PStaffConstants.offices.map((o) => DropdownMenuItem(
-                          value: o,
-                          child: Text(o, style: TextStyle(fontSize: 11, color: theme.textPrimary, fontWeight: FontWeight.w600)),
-                        )).toList(),
-                        onChanged: (val) {
-                          if (val != null) notifier.setSelectedOffice(val);
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(width: 8),
-
-                    Text('PERIOD:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
-                    const SizedBox(width: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: theme.cardBackground,
-                        border: Border.all(color: theme.cardBorder),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: DropdownButton<int>(
-                        value: state.selectedMonth,
-                        dropdownColor: theme.cardBackground,
-                        iconEnabledColor: theme.textPrimary,
-                        isDense: true,
-                        underline: const SizedBox(),
-                        items: List.generate(12, (i) => i + 1).map((m) {
-                          return DropdownMenuItem(
-                            value: m,
-                            child: Text(monthsList[m - 1], style: TextStyle(fontSize: 11, color: theme.textPrimary, fontWeight: FontWeight.w600)),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) notifier.setSelectedMonth(state.selectedYear, val);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: theme.cardBackground,
-                        border: Border.all(color: theme.cardBorder),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: DropdownButton<int>(
-                        value: state.selectedYear,
-                        dropdownColor: theme.cardBackground,
-                        iconEnabledColor: theme.textPrimary,
-                        isDense: true,
-                        underline: const SizedBox(),
-                        items: [2025, 2026, 2027].map((y) {
-                          return DropdownMenuItem(
-                            value: y,
-                            child: Text('$y', style: TextStyle(fontSize: 11, color: theme.textPrimary, fontWeight: FontWeight.w600)),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) notifier.setSelectedMonth(val, state.selectedMonth);
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(width: 12),
-
-                    InkWell(
-                      onTap: () => setState(() => _forceMatrixTable = !_forceMatrixTable),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: _forceMatrixTable ? AppColors.bafDeepBlue : AppColors.bafNavy,
-                          border: Border.all(color: AppColors.bafGold),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+              child: isMobile
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Row 1: Office Selector
+                        Row(
                           children: [
-                            Icon(
-                              _forceMatrixTable ? Icons.view_agenda : Icons.grid_on,
-                              size: 13,
-                              color: AppColors.bafGold,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _forceMatrixTable ? 'CARD VIEW' : 'FULL TABLE',
-                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(width: 8),
-
-                    // Download PDF Button
-                    InkWell(
-                      onTap: _isGeneratingPdf ? null : () => _handleDownloadPdf(state),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.bafGold,
-                          border: Border.all(color: AppColors.bafGold),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _isGeneratingPdf
-                                ? const SizedBox(
-                                    width: 12,
-                                    height: 12,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 1.5,
-                                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.bafNavy),
-                                    ),
-                                  )
-                                : const Icon(Icons.download, size: 13, color: AppColors.bafNavy),
-                            const SizedBox(width: 4),
-                            Text(
-                              _isGeneratingPdf ? 'SAVING...' : 'DOWNLOAD PDF',
-                              style: const TextStyle(
-                                color: AppColors.bafNavy,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w900,
+                            Text('OFFICE:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: theme.cardBackground,
+                                  border: Border.all(color: theme.cardBorder),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: DropdownButton<String>(
+                                  value: state.selectedOffice,
+                                  dropdownColor: theme.cardBackground,
+                                  iconEnabledColor: theme.textPrimary,
+                                  isExpanded: true,
+                                  isDense: true,
+                                  underline: const SizedBox(),
+                                  style: TextStyle(fontSize: 11, color: theme.textPrimary, fontWeight: FontWeight.bold),
+                                  items: PStaffConstants.offices.map((o) => DropdownMenuItem(
+                                    value: o,
+                                    child: Text(o, style: TextStyle(fontSize: 11, color: theme.textPrimary, fontWeight: FontWeight.bold)),
+                                  )).toList(),
+                                  onChanged: (val) {
+                                    if (val != null) notifier.setSelectedOffice(val);
+                                  },
+                                ),
                               ),
                             ),
                           ],
                         ),
+                        const SizedBox(height: 6),
+                        // Row 2: Period + Mode Toggle + Always-Visible Download PDF Button
+                        Row(
+                          children: [
+                            Text('PERIOD:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: theme.cardBackground,
+                                border: Border.all(color: theme.cardBorder),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: DropdownButton<int>(
+                                value: state.selectedMonth,
+                                dropdownColor: theme.cardBackground,
+                                iconEnabledColor: theme.textPrimary,
+                                isDense: true,
+                                underline: const SizedBox(),
+                                style: TextStyle(fontSize: 11, color: theme.textPrimary, fontWeight: FontWeight.bold),
+                                items: List.generate(12, (i) => i + 1).map((m) {
+                                  return DropdownMenuItem(
+                                    value: m,
+                                    child: Text(monthsList[m - 1], style: TextStyle(fontSize: 11, color: theme.textPrimary, fontWeight: FontWeight.bold)),
+                                  );
+                                }).toList(),
+                                onChanged: (val) {
+                                  if (val != null) notifier.setSelectedMonth(state.selectedYear, val);
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: theme.cardBackground,
+                                border: Border.all(color: theme.cardBorder),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: DropdownButton<int>(
+                                value: state.selectedYear,
+                                dropdownColor: theme.cardBackground,
+                                iconEnabledColor: theme.textPrimary,
+                                isDense: true,
+                                underline: const SizedBox(),
+                                style: TextStyle(fontSize: 11, color: theme.textPrimary, fontWeight: FontWeight.bold),
+                                items: [2025, 2026, 2027].map((y) {
+                                  return DropdownMenuItem(
+                                    value: y,
+                                    child: Text('$y', style: TextStyle(fontSize: 11, color: theme.textPrimary, fontWeight: FontWeight.bold)),
+                                  );
+                                }).toList(),
+                                onChanged: (val) {
+                                  if (val != null) notifier.setSelectedMonth(val, state.selectedMonth);
+                                },
+                              ),
+                            ),
+                            const Spacer(),
+                            // Prominent PDF Download Button
+                            InkWell(
+                              onTap: _isGeneratingPdf ? null : () => _handleDownloadPdf(state),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: AppColors.bafGold,
+                                  borderRadius: BorderRadius.circular(3),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.15),
+                                      blurRadius: 3,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _isGeneratingPdf
+                                        ? const SizedBox(
+                                            width: 12,
+                                            height: 12,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 1.5,
+                                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.bafNavy),
+                                            ),
+                                          )
+                                        : const Icon(Icons.download, size: 13, color: AppColors.bafNavy),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      _isGeneratingPdf ? 'SAVING...' : 'DOWNLOAD PDF',
+                                      style: const TextStyle(
+                                        color: AppColors.bafNavy,
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            InkWell(
+                              onTap: () => setState(() => _forceMatrixTable = !_forceMatrixTable),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: _forceMatrixTable ? AppColors.bafDeepBlue : AppColors.bafNavy,
+                                  border: Border.all(color: AppColors.bafGold),
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
+                                child: Icon(
+                                  _forceMatrixTable ? Icons.view_agenda : Icons.grid_on,
+                                  size: 13,
+                                  color: AppColors.bafGold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    )
+                  : SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          Text('OFFICE:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: theme.cardBackground,
+                              border: Border.all(color: theme.cardBorder),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: DropdownButton<String>(
+                              value: state.selectedOffice,
+                              dropdownColor: theme.cardBackground,
+                              iconEnabledColor: theme.textPrimary,
+                              isDense: true,
+                              underline: const SizedBox(),
+                              style: TextStyle(fontSize: 11, color: theme.textPrimary, fontWeight: FontWeight.bold),
+                              items: PStaffConstants.offices.map((o) => DropdownMenuItem(
+                                value: o,
+                                child: Text(o, style: TextStyle(fontSize: 11, color: theme.textPrimary, fontWeight: FontWeight.bold)),
+                              )).toList(),
+                              onChanged: (val) {
+                                if (val != null) notifier.setSelectedOffice(val);
+                              },
+                            ),
+                          ),
+
+                          const SizedBox(width: 8),
+
+                          Text('PERIOD:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.textSecondary)),
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: theme.cardBackground,
+                              border: Border.all(color: theme.cardBorder),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: DropdownButton<int>(
+                              value: state.selectedMonth,
+                              dropdownColor: theme.cardBackground,
+                              iconEnabledColor: theme.textPrimary,
+                              isDense: true,
+                              underline: const SizedBox(),
+                              style: TextStyle(fontSize: 11, color: theme.textPrimary, fontWeight: FontWeight.bold),
+                              items: List.generate(12, (i) => i + 1).map((m) {
+                                return DropdownMenuItem(
+                                  value: m,
+                                  child: Text(monthsList[m - 1], style: TextStyle(fontSize: 11, color: theme.textPrimary, fontWeight: FontWeight.bold)),
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                if (val != null) notifier.setSelectedMonth(state.selectedYear, val);
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: theme.cardBackground,
+                              border: Border.all(color: theme.cardBorder),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: DropdownButton<int>(
+                              value: state.selectedYear,
+                              dropdownColor: theme.cardBackground,
+                              iconEnabledColor: theme.textPrimary,
+                              isDense: true,
+                              underline: const SizedBox(),
+                              style: TextStyle(fontSize: 11, color: theme.textPrimary, fontWeight: FontWeight.bold),
+                              items: [2025, 2026, 2027].map((y) {
+                                return DropdownMenuItem(
+                                  value: y,
+                                  child: Text('$y', style: TextStyle(fontSize: 11, color: theme.textPrimary, fontWeight: FontWeight.bold)),
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                if (val != null) notifier.setSelectedMonth(val, state.selectedMonth);
+                              },
+                            ),
+                          ),
+
+                          const SizedBox(width: 12),
+
+                          InkWell(
+                            onTap: () => setState(() => _forceMatrixTable = !_forceMatrixTable),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: _forceMatrixTable ? AppColors.bafDeepBlue : AppColors.bafNavy,
+                                border: Border.all(color: AppColors.bafGold),
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    _forceMatrixTable ? Icons.view_agenda : Icons.grid_on,
+                                    size: 13,
+                                    color: AppColors.bafGold,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    _forceMatrixTable ? 'CARD VIEW' : 'FULL TABLE',
+                                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(width: 8),
+
+                          // Download PDF Button
+                          InkWell(
+                            onTap: _isGeneratingPdf ? null : () => _handleDownloadPdf(state),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.bafGold,
+                                border: Border.all(color: AppColors.bafGold),
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _isGeneratingPdf
+                                      ? const SizedBox(
+                                          width: 12,
+                                          height: 12,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 1.5,
+                                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.bafNavy),
+                                          ),
+                                        )
+                                      : const Icon(Icons.download, size: 13, color: AppColors.bafNavy),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    _isGeneratingPdf ? 'SAVING...' : 'DOWNLOAD PDF',
+                                    style: const TextStyle(
+                                      color: AppColors.bafNavy,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
             ),
 
             // 2. Accounting Calculation Strip
@@ -691,6 +870,8 @@ class _PStaffMonthlyMatrixViewState extends ConsumerState<PStaffMonthlyMatrixVie
             horizontalMargin: 8,
             columnSpacing: 8,
             headingRowColor: WidgetStateProperty.all(AppColors.bafNavy),
+            dataRowColor: WidgetStateProperty.all(theme.cardBackground),
+            dividerThickness: 1.0,
             columns: [
               const DataColumn(label: Text('BD NO', style: TextStyle(color: AppColors.bafGold, fontWeight: FontWeight.bold, fontSize: 9.5))),
               const DataColumn(label: Text('NAME & RANK', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10.5))),

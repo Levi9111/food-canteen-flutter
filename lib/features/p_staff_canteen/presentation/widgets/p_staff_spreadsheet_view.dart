@@ -186,6 +186,7 @@ class _PStaffSpreadsheetViewState extends ConsumerState<PStaffSpreadsheetView> {
                               const SizedBox(height: 4),
                               TextField(
                                 controller: noteController,
+                                style: TextStyle(color: theme.textPrimary, fontSize: 13),
                                 decoration: const InputDecoration(
                                   hintText: 'e.g. Cash payment on salary day, partial settlement',
                                   isDense: true,
