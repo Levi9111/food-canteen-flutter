@@ -49,17 +49,11 @@ class SessionNotifier extends Notifier<SessionState> {
   static const List<SessionUser> fixedAccounts = [
     SessionUser(
       username: 'ncoic',
-      name: 'Tariqul Islam',
-      rank: 'Sgt',
+      name: 'Shanjid Ahmad',
+      rank: 'Cpl',
+      trade: 'E&I Fitter',
       role: CanteenConstants.roleNcoic,
-      bdNo: 'BD/48291',
-    ),
-    SessionUser(
-      username: 'jcoic',
-      name: 'Humayun Kabir',
-      rank: 'MWO',
-      role: CanteenConstants.roleJcoic,
-      bdNo: 'BD/39102',
+      bdNo: 'BD/472770',
     ),
     SessionUser(
       username: 'admin',
@@ -170,19 +164,26 @@ class SessionNotifier extends Notifier<SessionState> {
 
     // 2. Offline fallback
     SessionUser? matchedUser;
-    if (cleanUser == 'ncoic' && (cleanPass == 'ncoic123' || cleanPass == 'NcoicPassword123')) {
+    final isNcoicLogin = cleanUser == 'ncoic' ||
+        cleanUser == '472770' ||
+        cleanUser == 'bd/472770' ||
+        cleanUser == 'shanjid';
+    final isNcoicPass = cleanPass == 'ncoic123' ||
+        cleanPass == 'NcoicPassword123' ||
+        cleanPass == '472770' ||
+        cleanPass == 'shanjid123';
+
+    if (isNcoicLogin && isNcoicPass) {
       matchedUser = fixedAccounts[0];
-    } else if (cleanUser == 'jcoic' && (cleanPass == 'jcoic123' || cleanPass == 'JcoicPassword123')) {
-      matchedUser = fixedAccounts[1];
     } else if (cleanUser == 'admin' && (cleanPass == 'admin123' || cleanPass == 'AdminPassword123')) {
-      matchedUser = fixedAccounts[2];
+      matchedUser = fixedAccounts.firstWhere((a) => a.role == 'ADMIN');
     }
 
     if (matchedUser == null) {
       if (!_disposed) {
         state = state.copyWith(
           isLoading: false,
-          errorMessage: 'Invalid military credentials. Try ncoic / ncoic123 or jcoic / jcoic123',
+          errorMessage: 'Invalid military credentials. Try BD No 472770 or ncoic / ncoic123',
         );
       }
       return false;

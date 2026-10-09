@@ -77,24 +77,38 @@ void main() {
       final session = container.read(sessionProvider);
       expect(session.isAuthenticated, true);
       expect(session.user?.role, 'NCOIC');
-      expect(session.user?.name, 'Tariqul Islam');
-      expect(session.user?.rank, 'Sgt');
+      expect(session.user?.name, 'Shanjid Ahmad');
+      expect(session.user?.rank, 'Cpl');
+      expect(session.user?.bdNo, 'BD/472770');
+      expect(session.user?.trade, 'E&I Fitter');
     });
 
-    test('Fixed credentials login and locked role binding for JCOIC', () async {
+    test('Login via BD Number for NCOIC Shanjid Ahmad', () async {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
       final sessionNotifier = container.read(sessionProvider.notifier);
 
-      final success = await sessionNotifier.login(username: 'jcoic', password: 'jcoic123');
+      final success = await sessionNotifier.login(username: '472770', password: '472770');
       expect(success, true);
 
       final session = container.read(sessionProvider);
       expect(session.isAuthenticated, true);
-      expect(session.user?.role, 'JCOIC');
-      expect(session.user?.name, 'Humayun Kabir');
-      expect(session.user?.rank, 'MWO');
+      expect(session.user?.name, 'Shanjid Ahmad');
+    });
+
+    test('Fixed credentials login for JCOIC is vacant by default', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final sessionNotifier = container.read(sessionProvider.notifier);
+
+      // JCOIC has been removed and is vacant until enrolled
+      final success = await sessionNotifier.login(username: 'jcoic', password: 'jcoic123');
+      expect(success, false);
+
+      final session = container.read(sessionProvider);
+      expect(session.isAuthenticated, false);
     });
 
     test('Invalid credentials fail login and report error message', () async {

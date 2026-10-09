@@ -5,6 +5,7 @@ class SessionUser {
   final String rank;
   final String role; // 'NCOIC', 'JCOIC', 'ADMIN'
   final String bdNo;
+  final String? trade;
 
   const SessionUser({
     this.id,
@@ -13,6 +14,7 @@ class SessionUser {
     required this.rank,
     required this.role,
     required this.bdNo,
+    this.trade,
   });
 
   Map<String, dynamic> toJson() => {
@@ -22,6 +24,7 @@ class SessionUser {
         'rank': rank,
         'role': role,
         'bdNo': bdNo,
+        if (trade != null) 'trade': trade,
       };
 
   factory SessionUser.fromJson(Map<String, dynamic> json) => SessionUser(
@@ -31,5 +34,6 @@ class SessionUser {
         rank: json['rank'] as String? ?? 'Sgt',
         role: json['role'] as String? ?? 'NCOIC',
         bdNo: json['bdNo'] as String? ?? '',
+        trade: json['trade'] as String?,
       );
 }

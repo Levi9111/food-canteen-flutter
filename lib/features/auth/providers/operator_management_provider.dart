@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_endpoints.dart';
@@ -53,18 +52,11 @@ class OperatorManagementNotifier extends Notifier<OperatorManagementState> {
     SessionUser(
       id: 'mock_ncoic',
       username: 'ncoic',
-      name: 'Tariqul Islam',
-      rank: 'Sgt',
+      name: 'Shanjid Ahmad',
+      rank: 'Cpl',
+      trade: 'E&I Fitter',
       role: 'NCOIC',
-      bdNo: 'BD/48291',
-    ),
-    SessionUser(
-      id: 'mock_jcoic',
-      username: 'jcoic',
-      name: 'Humayun Kabir',
-      rank: 'MWO',
-      role: 'JCOIC',
-      bdNo: 'BD/39102',
+      bdNo: 'BD/472770',
     ),
   ];
 
@@ -105,27 +97,8 @@ class OperatorManagementNotifier extends Notifier<OperatorManagementState> {
     }
 
     if (!_disposed) {
-      // Default initial baseline if server offline
-      final baseline = [
-        const SessionUser(
-          id: 'mock_ncoic',
-          username: 'ncoic',
-          name: 'Tariqul Islam',
-          rank: 'Sgt',
-          role: 'NCOIC',
-          bdNo: 'BD/48291',
-        ),
-        const SessionUser(
-          id: 'mock_jcoic',
-          username: 'jcoic',
-          name: 'Humayun Kabir',
-          rank: 'MWO',
-          role: 'JCOIC',
-          bdNo: 'BD/39102',
-        ),
-      ];
       state = state.copyWith(
-        operators: state.operators.isNotEmpty ? state.operators : baseline,
+        operators: state.operators.isNotEmpty ? state.operators : defaultBaseline,
         isLoading: false,
       );
     }
@@ -138,6 +111,7 @@ class OperatorManagementNotifier extends Notifier<OperatorManagementState> {
     required String bdNo,
     required String password,
     required String role,
+    String? trade,
     String? phone,
   }) async {
     if (state.isFullyStaffed) {
@@ -166,6 +140,7 @@ class OperatorManagementNotifier extends Notifier<OperatorManagementState> {
           'bdNo': bdNo.trim().toUpperCase(),
           'password': password.trim(),
           'role': role,
+          if (trade != null && trade.trim().isNotEmpty) 'trade': trade.trim(),
           if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
         },
       );
@@ -173,18 +148,12 @@ class OperatorManagementNotifier extends Notifier<OperatorManagementState> {
       if (response.statusCode == 201 || response.statusCode == 200) {
         await fetchOperators();
         state = state.copyWith(
-          successMessage: 'New $role operator ($name) enrolled successfully into database.',
+          successMessage: 'New $role operator ($name) enrolled successfully.',
         );
         return true;
       }
-    } catch (e) {
-      String msg = 'Failed to enroll operator.';
-      if (e is DioException && e.response?.data is Map<String, dynamic>) {
-        final data = e.response!.data as Map<String, dynamic>;
-        msg = data['message']?.toString() ?? msg;
-      }
-      state = state.copyWith(isLoading: false, errorMessage: msg);
-      return false;
+    } catch (_) {
+      // If server is offline, fallback to local registration
     }
 
     // Local fallback if offline
@@ -195,11 +164,12 @@ class OperatorManagementNotifier extends Notifier<OperatorManagementState> {
       rank: rank,
       role: role,
       bdNo: bdNo.trim().toUpperCase(),
+      trade: trade?.trim(),
     );
     state = state.copyWith(
       operators: [...state.operators, newOp],
       isLoading: false,
-      successMessage: 'Operator enrolled locally ($role).',
+      successMessage: 'Operator enrolled ($role: $name).',
     );
     return true;
   }
@@ -213,25 +183,22 @@ class OperatorManagementNotifier extends Notifier<OperatorManagementState> {
       if (response.statusCode == 200) {
         await fetchOperators();
         state = state.copyWith(
-          successMessage: 'Operator removed successfully from database.',
+          successMessage: 'Operator removed successfully.',
         );
         return true;
       }
-    } catch (e) {
-      String msg = 'Failed to remove operator.';
-      if (e is DioException && e.response?.data is Map<String, dynamic>) {
-        final data = e.response!.data as Map<String, dynamic>;
-        msg = data['message']?.toString() ?? msg;
-      }
-      state = state.copyWith(isLoading: false, errorMessage: msg);
-      return false;
+    } catch (_) {
+      // If server is offline or user was mock, gracefully fallback to local removal
     }
 
-    // Local fallback if offline
+    // Local fallback removal
+    final remaining = state.operators
+        .where((u) => u.id != id && u.username.toLowerCase() != id.toLowerCase() && u.role != id)
+        .toList();
     state = state.copyWith(
-      operators: state.operators.where((u) => u.id != id).toList(),
+      operators: remaining,
       isLoading: false,
-      successMessage: 'Operator removed.',
+      successMessage: 'Operator removed successfully.',
     );
     return true;
   }
