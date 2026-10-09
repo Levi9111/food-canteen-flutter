@@ -13,6 +13,7 @@ import '../../recruits_canteen/constants/canteen_constants.dart';
 import '../../recruits_canteen/providers/canteen_register_provider.dart';
 import '../../recruits_canteen/providers/canteen_structure_provider.dart';
 
+
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -712,8 +713,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             const SizedBox(height: 14),
 
-            // 6. Operator Auth Management (DB)
-            _buildSectionHeader(Icons.manage_accounts, 'OPERATOR AUTH MANAGEMENT (DB)'),
+            // 6. Canteen Duty Appointments
+            _buildSectionHeader(Icons.military_tech, 'CANTEEN DUTY APPOINTMENTS'),
             _buildOperatorManagementSection(context, ref, theme, session),
             const SizedBox(height: 14),
 
@@ -880,20 +881,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       decoration: BoxDecoration(
         color: theme.cardBackground,
         border: Border.all(color: theme.cardBorderLight),
+        borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Subheader & Refresh
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'ROLE OCCUPANCY: ${opState.operators.length}/2 SLOTS',
+                'DUTY IN-CHARGE APPOINTMENTS',
                 style: TextStyle(
-                  fontSize: 10.5,
+                  fontSize: 11,
                   fontWeight: FontWeight.w900,
-                  color: opState.isFullyStaffed ? AppColors.bafRoundelGreen : AppColors.bafGold,
+                  color: theme.textPrimary,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -903,11 +904,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                   child: Row(
                     children: [
-                      Icon(Icons.refresh, size: 13, color: theme.accentGold),
+                      Icon(Icons.sync, size: 13, color: theme.accentGold),
                       const SizedBox(width: 3),
                       Text(
-                        'REFRESH DB',
-                        style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: theme.accentGold),
+                        'REFRESH',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.accentGold),
                       ),
                     ],
                   ),
@@ -915,20 +916,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 4),
+          Text(
+            'Appointed military personnel responsible for daily ledger maintenance, spending entries, and collections.',
+            style: TextStyle(fontSize: 10, color: theme.textSecondary),
+          ),
+          const SizedBox(height: 12),
 
           // NCOIC Card
           _buildRoleCard(
             context: context,
             ref: ref,
             theme: theme,
-            roleTitle: 'NCOIC (NON-COMMISSIONED OFFICER IN-CHARGE)',
+            roleTitle: 'NCO IN-CHARGE (NCOIC)',
             roleTag: 'NCOIC',
             operator: ncoic,
             currentRole: currentRole,
             currentUserId: currentUserId,
             currentUsername: currentUsername,
-            canRemove: currentRole == 'JCOIC' || currentRole == 'ADMIN',
+            canRemove: true,
           ),
           const SizedBox(height: 10),
 
@@ -937,32 +943,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             context: context,
             ref: ref,
             theme: theme,
-            roleTitle: 'JCOIC (JUNIOR COMMISSIONED OFFICER IN-CHARGE)',
+            roleTitle: 'JCO IN-CHARGE (JCOIC)',
             roleTag: 'JCOIC',
             operator: jcoic,
             currentRole: currentRole,
             currentUserId: currentUserId,
             currentUsername: currentUsername,
-            canRemove: currentRole == 'NCOIC' || currentRole == 'ADMIN',
+            canRemove: true,
           ),
           const SizedBox(height: 12),
 
-          // Enrollment or Max limit banner
+          // Status Notice or Appoint Button
           if (opState.isFullyStaffed)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
                 color: theme.surface,
                 border: Border.all(color: theme.cardBorder),
+                borderRadius: BorderRadius.circular(4),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.shield_outlined, size: 16, color: AppColors.bafGold),
+                  const Icon(Icons.check_circle_outline, size: 16, color: AppColors.bafRoundelGreen),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Both roles active (1 NCOIC & 1 JCOIC). No additional user allowed unless an existing role is removed.',
-                      style: TextStyle(fontSize: 10, color: theme.textSecondary, fontWeight: FontWeight.w500),
+                      'Both NCOIC and JCOIC positions are appointed and active.',
+                      style: TextStyle(fontSize: 10.5, color: theme.textSecondary, fontWeight: FontWeight.w500),
                     ),
                   ),
                 ],
@@ -970,17 +977,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             )
           else if (opState.vacantRole != null)
             SizedBox(
-              height: 40,
+              height: 38,
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.person_add_alt_1, size: 16),
                 label: Text(
-                  'ENROLL ${opState.vacantRole} OPERATOR',
-                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11.5, letterSpacing: 0.5),
+                  'APPOINT ${opState.vacantRole} IN-CHARGE',
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.bafGold,
                   foregroundColor: AppColors.bafNavy,
-                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                 ),
                 onPressed: () => _showEnrollOperatorDialog(context, ref, opState.vacantRole!),
               ),
@@ -1012,9 +1019,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       decoration: BoxDecoration(
         color: theme.surface,
         border: Border.all(
-          color: isVacant ? theme.cardBorderLight : theme.accentGold.withValues(alpha: 0.4),
+          color: isVacant ? theme.cardBorderLight : theme.accentGold.withValues(alpha: 0.5),
           width: 1,
         ),
+        borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1039,9 +1047,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               if (isSelf)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  color: AppColors.bafRoundelGreen.withValues(alpha: 0.2),
+                  decoration: BoxDecoration(
+                    color: AppColors.bafRoundelGreen.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                   child: const Text(
-                    'YOU',
+                    'CURRENT USER',
                     style: TextStyle(color: AppColors.bafRoundelGreen, fontSize: 8.5, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -1052,20 +1063,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'VACANT - POSITION NOT ASSIGNED',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: theme.textSecondary),
+                Expanded(
+                  child: Text(
+                    'Position vacant — No in-charge currently assigned.',
+                    style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: theme.textSecondary),
+                  ),
                 ),
-                TextButton(
+                ElevatedButton(
                   onPressed: () => _showEnrollOperatorDialog(context, ref, roleTag),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.bafGold,
+                    foregroundColor: AppColors.bafNavy,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(3)),
                   ),
                   child: Text(
-                    '+ ENROLL',
-                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900, color: theme.accentGold),
+                    '+ Appoint $roleTag',
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900),
                   ),
                 ),
               ],
@@ -1079,31 +1095,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     children: [
                       Text(
                         operator.name,
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.textPrimary),
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: theme.textPrimary),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${operator.rank} • BD No: ${operator.bdNo}${operator.trade != null ? ' • ${operator.trade}' : ''}',
+                        style: TextStyle(fontSize: 10.5, color: theme.textSecondary),
                       ),
                       Text(
-                        '${operator.rank} • BD No: ${operator.bdNo} (@${operator.username})',
-                        style: TextStyle(fontSize: 10, color: theme.textSecondary),
+                        'Login ID: ${operator.username}',
+                        style: TextStyle(fontSize: 9.5, color: theme.textMuted),
                       ),
                     ],
                   ),
                 ),
-                if (!isSelf && canRemove)
-                  OutlinedButton.icon(
-                    icon: Icon(Icons.person_remove, size: 13, color: theme.debit),
-                    label: Text(
-                      'REMOVE $roleTag',
-                      style: TextStyle(color: theme.debit, fontSize: 9.5, fontWeight: FontWeight.bold),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: theme.debit),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-                    ),
-                    onPressed: () => _confirmRemoveOperator(context, ref, operator),
+                OutlinedButton.icon(
+                  icon: Icon(Icons.person_remove_outlined, size: 14, color: theme.debit),
+                  label: Text(
+                    'Remove',
+                    style: TextStyle(color: theme.debit, fontSize: 10, fontWeight: FontWeight.bold),
                   ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: theme.debit),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(3)),
+                  ),
+                  onPressed: () => _confirmRemoveOperator(context, ref, operator),
+                ),
               ],
             ),
         ],
@@ -1117,19 +1137,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: theme.cardBackground,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         title: Row(
           children: [
             Icon(Icons.warning_amber_rounded, color: theme.debit, size: 22),
             const SizedBox(width: 8),
             Text(
-              'REMOVE ${target.role}?',
+              'Remove ${target.role} Appointment?',
               style: TextStyle(color: theme.textPrimary, fontSize: 13, fontWeight: FontWeight.bold),
             ),
           ],
         ),
         content: Text(
-          'Are you sure you want to remove ${target.role} (${target.name}, ${target.bdNo}) from the database? This slot will become vacant.',
+          'Remove ${target.rank} ${target.name} (${target.bdNo}) from ${target.role} duty? The position will become vacant until a new in-charge is appointed.',
           style: TextStyle(color: theme.textSecondary, fontSize: 11.5),
         ),
         actions: [
@@ -1141,7 +1161,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.debit,
               foregroundColor: Colors.white,
-              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
             ),
             onPressed: () async {
               Navigator.of(ctx).pop();
@@ -1152,14 +1172,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(success
-                        ? (opState.successMessage ?? 'Operator removed')
+                        ? (opState.successMessage ?? 'Appointment removed')
                         : (opState.errorMessage ?? 'Removal failed')),
                     backgroundColor: success ? AppColors.bafRoundelGreen : theme.debit,
                   ),
                 );
               }
             },
-            child: const Text('CONFIRM REMOVAL', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text('REMOVE APPOINTMENT', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -1170,8 +1190,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final nameCtrl = TextEditingController();
     final usernameCtrl = TextEditingController();
     final bdNoCtrl = TextEditingController();
+    final tradeCtrl = TextEditingController();
     final passCtrl = TextEditingController();
-    String selectedRank = role == 'JCOIC' ? 'MWO' : 'Sgt';
+    String selectedRank = role == 'JCOIC' ? 'MWO' : 'Cpl';
     final theme = context.canteenTheme;
 
     showModalBottomSheet(
@@ -1188,11 +1209,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               child: Center(
                 child: Container(
-                  width: 420,
+                  width: 440,
                   margin: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
                     color: theme.cardBackground,
                     border: Border.all(color: theme.accentGold, width: 1.5),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: SingleChildScrollView(
                     child: Column(
@@ -1207,7 +1229,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               const Icon(Icons.person_add_alt_1, color: AppColors.bafGold, size: 18),
                               const SizedBox(width: 8),
                               Text(
-                                'ENROLL NEW $role OPERATOR',
+                                'APPOINT $role IN-CHARGE',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -1232,40 +1254,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 controller: nameCtrl,
                                 style: TextStyle(color: theme.textPrimary, fontSize: 13),
                                 decoration: InputDecoration(
-                                  hintText: 'e.g. Tariqul Islam',
+                                  hintText: 'e.g. Humayun Kabir',
                                   filled: true,
                                   fillColor: theme.surface,
                                   isDense: true,
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: theme.cardBorder)),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: theme.cardBorder)),
                                 ),
                               ),
                               const SizedBox(height: 12),
                               Row(
                                 children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'USERNAME:',
-                                          style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textPrimary),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        TextField(
-                                          controller: usernameCtrl,
-                                          style: TextStyle(color: theme.textPrimary, fontSize: 13),
-                                          decoration: InputDecoration(
-                                            hintText: role.toLowerCase(),
-                                            filled: true,
-                                            fillColor: theme.surface,
-                                            isDense: true,
-                                            border: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: theme.cardBorder)),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1279,11 +1277,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                           controller: bdNoCtrl,
                                           style: TextStyle(color: theme.textPrimary, fontSize: 13),
                                           decoration: InputDecoration(
-                                            hintText: 'BD/XXXXX',
+                                            hintText: 'e.g. 472770 or BD/472770',
                                             filled: true,
                                             fillColor: theme.surface,
                                             isDense: true,
-                                            border: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: theme.cardBorder)),
+                                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: theme.cardBorder)),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'TRADE:',
+                                          style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textPrimary),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        TextField(
+                                          controller: tradeCtrl,
+                                          style: TextStyle(color: theme.textPrimary, fontSize: 13),
+                                          decoration: InputDecoration(
+                                            hintText: 'e.g. E&I Fitter',
+                                            filled: true,
+                                            fillColor: theme.surface,
+                                            isDense: true,
+                                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: theme.cardBorder)),
                                           ),
                                         ),
                                       ],
@@ -1311,7 +1333,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                             filled: true,
                                             fillColor: theme.surface,
                                             isDense: true,
-                                            border: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: theme.cardBorder)),
+                                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: theme.cardBorder)),
                                           ),
                                           items: CanteenConstants.ranks.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
                                           onChanged: (val) {
@@ -1329,17 +1351,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          'ASSIGNED ROLE:',
+                                          'LOGIN USERNAME:',
                                           style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textPrimary),
                                         ),
                                         const SizedBox(height: 4),
-                                        Container(
-                                          height: 48,
-                                          alignment: Alignment.center,
-                                          color: AppColors.bafNavy,
-                                          child: Text(
-                                            role,
-                                            style: const TextStyle(color: AppColors.bafGold, fontWeight: FontWeight.w900, fontSize: 13),
+                                        TextField(
+                                          controller: usernameCtrl,
+                                          style: TextStyle(color: theme.textPrimary, fontSize: 13),
+                                          decoration: InputDecoration(
+                                            hintText: role.toLowerCase(),
+                                            filled: true,
+                                            fillColor: theme.surface,
+                                            isDense: true,
+                                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: theme.cardBorder)),
                                           ),
                                         ),
                                       ],
@@ -1349,7 +1373,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                'PASSWORD (MIN 6 CHARS):',
+                                'LOGIN PASSWORD:',
                                 style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textPrimary),
                               ),
                               const SizedBox(height: 4),
@@ -1358,22 +1382,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 obscureText: true,
                                 style: TextStyle(color: theme.textPrimary, fontSize: 13),
                                 decoration: InputDecoration(
-                                  hintText: 'Enter secure password',
+                                  hintText: 'Enter secure password (min 6 chars)',
                                   filled: true,
                                   fillColor: theme.surface,
                                   isDense: true,
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: theme.cardBorder)),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: theme.cardBorder)),
                                 ),
                               ),
                               const SizedBox(height: 18),
                               ModalActionBar(
                                 cancelLabel: 'CANCEL',
-                                confirmLabel: 'ENROLL $role',
+                                confirmLabel: 'APPOINT $role',
                                 onCancel: () => Navigator.of(ctx).pop(),
                                 onConfirm: () async {
                                   final name = nameCtrl.text.trim();
                                   final username = usernameCtrl.text.trim();
                                   final bdNo = bdNoCtrl.text.trim();
+                                  final trade = tradeCtrl.text.trim();
                                   final pass = passCtrl.text.trim();
 
                                   if (name.isEmpty || username.isEmpty || bdNo.isEmpty || pass.length < 6) {
@@ -1388,6 +1413,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                     name: name,
                                     rank: selectedRank,
                                     bdNo: bdNo,
+                                    trade: trade.isNotEmpty ? trade : null,
                                     password: pass,
                                     role: role,
                                   );
@@ -1398,8 +1424,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(success
-                                            ? (opState.successMessage ?? 'Enrolled successfully')
-                                            : (opState.errorMessage ?? 'Enrollment failed')),
+                                            ? (opState.successMessage ?? 'Appointed successfully')
+                                            : (opState.errorMessage ?? 'Appointment failed')),
                                         backgroundColor: success ? AppColors.bafRoundelGreen : theme.debit,
                                       ),
                                     );
