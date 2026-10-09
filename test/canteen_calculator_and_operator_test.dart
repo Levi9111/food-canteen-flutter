@@ -32,40 +32,40 @@ void main() {
       expect(find.text('CANTEEN EXPENSE CALCULATOR'), findsOneWidget);
 
       // Tap 5, 5
-      await tester.tap(find.widgetWithText(OutlinedButton, '5'));
+      await tester.tap(find.widgetWithText(InkWell, '5'));
       await tester.pump();
-      await tester.tap(find.widgetWithText(OutlinedButton, '5'));
+      await tester.tap(find.widgetWithText(InkWell, '5'));
       await tester.pump();
 
       // Tap +
-      await tester.tap(find.widgetWithText(OutlinedButton, '+'));
+      await tester.tap(find.widgetWithText(InkWell, '+'));
       await tester.pump();
 
       // Tap 2, 0
-      await tester.tap(find.widgetWithText(OutlinedButton, '2'));
+      await tester.tap(find.widgetWithText(InkWell, '2'));
       await tester.pump();
-      await tester.tap(find.widgetWithText(OutlinedButton, '0'));
+      await tester.tap(find.widgetWithText(InkWell, '0'));
       await tester.pump();
 
       // Tap +
-      await tester.tap(find.widgetWithText(OutlinedButton, '+'));
+      await tester.tap(find.widgetWithText(InkWell, '+'));
       await tester.pump();
 
       // Tap 5, 0
-      await tester.tap(find.widgetWithText(OutlinedButton, '5'));
+      await tester.tap(find.widgetWithText(InkWell, '5'));
       await tester.pump();
-      await tester.tap(find.widgetWithText(OutlinedButton, '0'));
+      await tester.tap(find.widgetWithText(InkWell, '0'));
       await tester.pump();
 
       // Tap =
-      await tester.tap(find.widgetWithText(OutlinedButton, '='));
+      await tester.tap(find.widgetWithText(InkWell, '='));
       await tester.pumpAndSettle();
 
       // Should display running total 125 (55 + 20 + 50)
       expect(find.textContaining('125'), findsWidgets);
 
-      // Tap APPLY AMOUNT
-      await tester.tap(find.text('APPLY AMOUNT'));
+      // Tap APPLY TOTAL
+      await tester.tap(find.text('APPLY TOTAL'));
       await tester.pumpAndSettle();
 
       expect(result, equals(125.0));
@@ -127,6 +127,20 @@ void main() {
       final container = ProviderContainer();
       final notifier = container.read(operatorManagementProvider.notifier);
 
+      // Enrolling JCOIC fills the vacant slot
+      final enrolledJcoic = await notifier.enrollOperator(
+        username: 'jcoic',
+        name: 'Second Operator',
+        rank: 'MWO',
+        bdNo: 'BD/39102',
+        password: 'password123',
+        role: 'JCOIC',
+      );
+      expect(enrolledJcoic, isTrue);
+
+      final state = container.read(operatorManagementProvider);
+      expect(state.isFullyStaffed, isTrue);
+
       final success = await notifier.enrollOperator(
         username: 'third_op',
         name: 'Third Operator',
@@ -136,11 +150,11 @@ void main() {
         role: 'NCOIC',
       );
 
-      // Baseline has 2 operators, so enrolling third must be rejected
-      final state = container.read(operatorManagementProvider);
-      expect(state.isFullyStaffed, isTrue);
+      // Now with both NCOIC and JCOIC occupied, enrolling third must be rejected
+      final stateFinal = container.read(operatorManagementProvider);
+      expect(stateFinal.isFullyStaffed, isTrue);
       expect(success, isFalse);
-      expect(state.errorMessage, contains('Both NCOIC and JCOIC positions are already occupied'));
+      expect(stateFinal.errorMessage, contains('Both NCOIC and JCOIC positions are already occupied'));
     });
   });
 }
