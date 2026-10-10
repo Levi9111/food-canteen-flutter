@@ -164,6 +164,38 @@ class CanteenStructureNotifier extends Notifier<CanteenStructureState> {
     return true;
   }
 
+  Future<bool> updateSquadronName(String oldName, String newName) async {
+    final trimmedOld = oldName.trim();
+    final trimmedNew = newName.trim();
+    if (trimmedNew.isEmpty) return false;
+    if (trimmedOld == trimmedNew) return true;
+    if (state.squadrons.contains(trimmedNew)) return false;
+
+    final index = state.squadrons.indexOf(trimmedOld);
+    if (index == -1) return false;
+
+    final updatedSqns = List<String>.from(state.squadrons);
+    updatedSqns[index] = trimmedNew;
+
+    final updatedRooms = Map<String, List<String>>.from(state.roomsBySquadron);
+    final existingRooms = updatedRooms.remove(trimmedOld) ?? List<String>.from(CanteenConstants.rooms);
+    updatedRooms[trimmedNew] = existingRooms;
+
+    state = state.copyWith(squadrons: updatedSqns, roomsBySquadron: updatedRooms);
+    await _saveToPrefs();
+
+    // Async sync to server database
+    try {
+      final dio = ref.read(dioProvider);
+      await dio.patch(
+        ApiEndpoints.squadron(trimmedOld),
+        data: {'name': trimmedNew},
+      );
+    } catch (_) {}
+
+    return true;
+  }
+
   Future<bool> removeSquadron(String name) async {
     if (state.squadrons.length <= 1) {
       return false; // Guard: At least 1 squadron must remain
@@ -178,7 +210,7 @@ class CanteenStructureNotifier extends Notifier<CanteenStructureState> {
     // Async sync to server database
     try {
       final dio = ref.read(dioProvider);
-      await dio.delete('${ApiEndpoints.squadrons}/$name');
+      await dio.delete(ApiEndpoints.squadron(name));
     } catch (_) {}
 
     return true;
@@ -189,7 +221,9 @@ class CanteenStructureNotifier extends Notifier<CanteenStructureState> {
     if (trimmed.isEmpty) return false;
 
     final currentRooms = List<String>.from(state.getRoomsForSquadron(squadron));
-    if (currentRooms.contains(trimmed)) return false;
+    if (currentRooms.any((r) => r.toLowerCase() == trimmed.toLowerCase())) {
+      return false;
+    }
 
     currentRooms.add(trimmed);
     final updatedRooms = Map<String, List<String>>.from(state.roomsBySquadron);
@@ -203,7 +237,10 @@ class CanteenStructureNotifier extends Notifier<CanteenStructureState> {
       final dio = ref.read(dioProvider);
       await dio.post(
         ApiEndpoints.squadronRooms(squadron),
-        data: {'room': trimmed},
+        data: {
+          'roomName': trimmed,
+          'room': trimmed,
+        },
       );
     } catch (_) {}
 
@@ -215,7 +252,7 @@ class CanteenStructureNotifier extends Notifier<CanteenStructureState> {
     if (currentRooms.length <= 1) {
       return false; // Guard: At least 1 room must remain in a squadron
     }
-    currentRooms.remove(roomName);
+    currentRooms.removeWhere((r) => r.toLowerCase() == roomName.trim().toLowerCase());
     final updatedRooms = Map<String, List<String>>.from(state.roomsBySquadron);
     updatedRooms[squadron] = currentRooms;
 
@@ -225,7 +262,7 @@ class CanteenStructureNotifier extends Notifier<CanteenStructureState> {
     // Async sync to server database
     try {
       final dio = ref.read(dioProvider);
-      await dio.delete('${ApiEndpoints.squadronRooms(squadron)}/$roomName');
+      await dio.delete(ApiEndpoints.squadronRoom(squadron, roomName));
     } catch (_) {}
 
     return true;
