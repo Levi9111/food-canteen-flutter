@@ -14,7 +14,10 @@ class ApiEndpoints {
 
   // Squadrons & Rooms
   static const String squadrons = '/squadrons';
-  static String squadronRooms(String name) => '/squadrons/$name/rooms';
+  static String squadron(String nameOrId) => '/squadrons/${Uri.encodeComponent(nameOrId)}';
+  static String squadronRooms(String nameOrId) => '/squadrons/${Uri.encodeComponent(nameOrId)}/rooms';
+  static String squadronRoom(String nameOrId, String roomName) =>
+      '/squadrons/${Uri.encodeComponent(nameOrId)}/rooms/${Uri.encodeComponent(roomName)}';
 
   // Entry Batches
   static const String entries = '/entries';
