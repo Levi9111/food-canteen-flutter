@@ -88,9 +88,110 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               final success = await ref.read(canteenStructureProvider.notifier).addSquadron(val);
                               if (ctx.mounted) {
                                 Navigator.of(ctx).pop();
-                                if (!success) {
+                                if (success) {
+                                  setState(() => _selectedSquadronForRooms = val);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Added $val Squadron with 16 default rooms')),
+                                  );
+                                } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(content: Text('Squadron already exists or invalid')),
+                                  );
+                                }
+                              }
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showRenameSquadronDialog(BuildContext context, WidgetRef ref, String oldSquadron) {
+    final controller = TextEditingController(text: oldSquadron);
+    final theme = context.canteenTheme;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: Center(
+            child: Container(
+              width: 380,
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: theme.cardBackground,
+                border: Border.all(color: theme.accentGold, width: 1.5),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    color: AppColors.bafNavy,
+                    child: Text(
+                      'RENAME SQUADRON: $oldSquadron',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'NEW SQUADRON NAME:',
+                          style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme.textPrimary),
+                        ),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: controller,
+                          autofocus: true,
+                          style: TextStyle(color: theme.textPrimary, fontSize: 13),
+                          decoration: InputDecoration(
+                            hintText: 'Enter new squadron name',
+                            hintStyle: TextStyle(color: theme.textSecondary),
+                            filled: true,
+                            fillColor: theme.surface,
+                            isDense: true,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: theme.cardBorder)),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ModalActionBar(
+                          cancelLabel: 'CANCEL',
+                          confirmLabel: 'SAVE CHANGES',
+                          onCancel: () => Navigator.of(ctx).pop(),
+                          onConfirm: () async {
+                            final val = controller.text.trim();
+                            if (val.isNotEmpty) {
+                              final success = await ref.read(canteenStructureProvider.notifier).updateSquadronName(oldSquadron, val);
+                              if (ctx.mounted) {
+                                Navigator.of(ctx).pop();
+                                if (success) {
+                                  if (_selectedSquadronForRooms == oldSquadron) {
+                                    setState(() => _selectedSquadronForRooms = val);
+                                  }
+                                  final regState = ref.read(canteenRegisterProvider);
+                                  if (regState.selectedSquadron == oldSquadron) {
+                                    ref.read(canteenRegisterProvider.notifier).setSelectedSquadron(val);
+                                  }
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Squadron updated from $oldSquadron to $val successfully')),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Squadron name already exists or invalid')),
                                   );
                                 }
                               }
@@ -173,9 +274,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               final success = await ref.read(canteenStructureProvider.notifier).addRoom(squadron, val);
                               if (ctx.mounted) {
                                 Navigator.of(ctx).pop();
-                                if (!success) {
+                                if (success) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Room already exists in this squadron')),
+                                    SnackBar(content: Text('Added $val to $squadron Squadron')),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Room already exists in this squadron or invalid')),
                                   );
                                 }
                               }
@@ -561,8 +666,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             const SizedBox(height: 14),
 
-            // 4. Squadron Management (Add/Remove Squadrons)
-            _buildSectionHeader(Icons.shield_outlined, 'SQUADRON MANAGEMENT (ADD / REMOVE)'),
+            // 4. Squadron Management (Add/Rename/Remove Squadrons)
+            _buildSectionHeader(Icons.shield_outlined, 'SQUADRON MANAGEMENT (ADD / RENAME / REMOVE)'),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -591,35 +696,100 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                  const SizedBox(height: 10),
+                  Column(
                     children: squadrons.map((sqn) {
                       final roomCount = structure.getRoomsForSquadron(sqn).length;
-                      return Chip(
-                        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-                        backgroundColor: sqn == activeSquadron ? AppColors.bafGold.withAlpha(50) : theme.surface,
-                        side: BorderSide(
-                          color: sqn == activeSquadron ? AppColors.bafGold : theme.cardBorder,
-                          width: 1.2,
+                      final isSelected = sqn == activeSquadron;
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: isSelected ? AppColors.bafGold.withAlpha(25) : theme.surface,
+                          border: Border.all(
+                            color: isSelected ? AppColors.bafGold : theme.cardBorder,
+                            width: isSelected ? 1.5 : 1,
+                          ),
                         ),
-                        avatar: const Icon(Icons.shield, size: 14, color: AppColors.bafGold),
-                        label: Text('$sqn ($roomCount Rooms)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: theme.textPrimary)),
-                        deleteIcon: squadrons.length > 1
-                            ? Icon(Icons.close, size: 14, color: theme.debit)
-                            : null,
-                        onDeleted: squadrons.length > 1
-                            ? () {
-                                _confirmRemoveSquadron(context, ref, sqn, () async {
-                                  final removed = await structureNotifier.removeSquadron(sqn);
-                                  if (removed && registerState.selectedSquadron == sqn) {
-                                    final fallback = structure.squadrons.firstWhere((s) => s != sqn);
-                                    registerNotifier.setSelectedSquadron(fallback);
-                                  }
-                                });
-                              }
-                            : null,
+                        child: Row(
+                          children: [
+                            Icon(Icons.shield, size: 16, color: isSelected ? AppColors.bafGold : theme.accentGold),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => setState(() => _selectedSquadronForRooms = sqn),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          sqn,
+                                          style: TextStyle(
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: theme.textPrimary,
+                                          ),
+                                        ),
+                                        if (isSelected) ...[
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                            color: AppColors.bafGold,
+                                            child: const Text(
+                                              'ACTIVE',
+                                              style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w900, color: AppColors.bafNavy),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                    Text(
+                                      '$roomCount Rooms configured • Tap to manage rooms',
+                                      style: TextStyle(fontSize: 10, color: theme.textSecondary),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            // Quick button to rename squadron
+                            IconButton(
+                              icon: Icon(Icons.edit_outlined, size: 18, color: theme.accentGold),
+                              tooltip: 'Rename Squadron',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                              onPressed: () => _showRenameSquadronDialog(context, ref, sqn),
+                            ),
+                            // Quick button to delete squadron
+                            if (squadrons.length > 1)
+                              IconButton(
+                                icon: Icon(Icons.delete_outline, size: 18, color: theme.debit),
+                                tooltip: 'Remove Squadron',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                onPressed: () {
+                                  _confirmRemoveSquadron(context, ref, sqn, () async {
+                                    final removed = await structureNotifier.removeSquadron(sqn);
+                                    if (removed) {
+                                      if (activeSquadron == sqn) {
+                                        final fallback = structure.squadrons.firstWhere((s) => s != sqn);
+                                        setState(() => _selectedSquadronForRooms = fallback);
+                                      }
+                                      if (registerState.selectedSquadron == sqn) {
+                                        final fallback = structure.squadrons.firstWhere((s) => s != sqn);
+                                        registerNotifier.setSelectedSquadron(fallback);
+                                      }
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Removed $sqn Squadron')),
+                                        );
+                                      }
+                                    }
+                                  });
+                                },
+                              ),
+                          ],
+                        ),
                       );
                     }).toList(),
                   ),
@@ -700,8 +870,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             : null,
                         onDeleted: roomsForActiveSqn.length > 1
                             ? () {
-                                _confirmRemoveRoom(context, ref, activeSquadron, room, () {
-                                  structureNotifier.removeRoom(activeSquadron, room);
+                                _confirmRemoveRoom(context, ref, activeSquadron, room, () async {
+                                  final removed = await structureNotifier.removeRoom(activeSquadron, room);
+                                  if (removed && context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Removed $room from $activeSquadron Squadron')),
+                                    );
+                                  }
                                 });
                               }
                             : null,
